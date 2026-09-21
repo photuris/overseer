@@ -4,12 +4,14 @@ Concrete mapping of the overseer skill's abstract interface onto
 Herdr, via the [`overseer-driver`][overseer-driver] CLI (`--harness
 herdr`). Install it once per machine (`go install
 github.com/photuris/overseer-driver/cmd/overseer-driver@latest`, or a
-prebuilt binary once published). This file assumes the `herdr` skill
+prebuilt binary from its [releases page][overseer-driver-releases]).
+This file assumes the `herdr` skill
 for general pane/tab/worktree mechanics and covers anything
 overseer-driver does not wrap (below) with raw `herdr` commands
 instead — never improvise syntax beyond what's documented here.
 
 [overseer-driver]: https://github.com/photuris/overseer-driver
+[overseer-driver-releases]: https://github.com/photuris/overseer-driver/releases/latest
 
 ## Signal and preconditions
 

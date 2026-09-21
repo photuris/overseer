@@ -4,12 +4,14 @@ Concrete mapping of the overseer skill's abstract interface onto tmux,
 via the [`overseer-driver`][overseer-driver] CLI (`--harness tmux`).
 Install it once per machine (`go install
 github.com/photuris/overseer-driver/cmd/overseer-driver@latest`, or a
-prebuilt binary once published) — never improvise raw tmux syntax
+prebuilt binary from its [releases page][overseer-driver-releases]) —
+never improvise raw tmux syntax
 instead; it exists precisely because that syntax has sharp edges
 (literal-mode flags, blank-line padding, a server-restart race) this
 CLI already found and fixed once.
 
 [overseer-driver]: https://github.com/photuris/overseer-driver
+[overseer-driver-releases]: https://github.com/photuris/overseer-driver/releases/latest
 
 Unlike Herdr, tmux has no concept of "agent" — only sessions, windows,
 panes, and the text inside them — so `status` is a best-effort
