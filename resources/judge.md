@@ -6,12 +6,16 @@ judgments into typed JSON verdicts from a fast classification model
 second per call. It exists to save your attention on the common case,
 not to make decisions for you.
 
-Source: `github.com/photuris/overseer-judge` (private). Build with
-`CGO_ENABLED=0 go build -o ~/.local/bin/overseer-judge
-./cmd/overseer-judge`. It reads its API key from `TYPESAFE_API_KEY`,
-else from `~/.config/jev`. Run `overseer-judge <verb> --help` for
-flags. Every verb accepts `--dry-run`, which prints the request and
-makes no network call.
+Source: [`github.com/photuris/overseer-judge`][overseer-judge]. Install
+with `go install
+github.com/photuris/overseer-judge/cmd/overseer-judge@latest`, or a
+prebuilt binary from its [releases page][overseer-judge-releases]. It
+reads its API key from `TYPESAFE_API_KEY`, else from `~/.config/jev`.
+Run `overseer-judge <verb> --help` for flags. Every verb accepts
+`--dry-run`, which prints the request and makes no network call.
+
+[overseer-judge]: https://github.com/photuris/overseer-judge
+[overseer-judge-releases]: https://github.com/photuris/overseer-judge/releases/latest
 
 ## Rules that hold for every use
 
