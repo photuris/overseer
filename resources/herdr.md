@@ -181,6 +181,27 @@ only when this shows no other live session working in that repo.
 Another live session in the repo, or three or more concurrent
 implementers, means one Herdr worktree each, and you own the merge.
 
+Create each worktree from your own workspace, never from a path:
+
+```bash
+resp=$(herdr worktree create --workspace "$HERDR_WORKSPACE_ID" --branch task/003 --base main --no-focus)
+pane=$(echo "$resp" | jq -r .result.root_pane.pane_id)   # the new workspace's shell pane
+herdr agent start impl-003 --kind claude --pane "$pane" --timeout 60000 -- --model opus
+```
+
+The worktree opens as its own workspace; the implementer starts in
+that workspace's root pane (`herdr agent start`, not `spawn`, which
+would land in your workspace and the main checkout). The checkout path
+is `.result.worktree.path`.
+
+`--cwd` resolves the repo's parent workspace by scanning the sidebar
+for the first workspace whose first-tab pane happens to sit in that
+repo. That can be another project's workspace with a shell parked in
+your repo; Herdr then stamps it as the repo's parent and nests your
+workspace, and every other workspace on the repo, under it in the
+sidebar (seen in one run, and it persists across restarts).
+`--workspace` pins the parent to the caller and never scans.
+
 ## Notify
 
 ```bash
