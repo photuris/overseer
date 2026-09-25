@@ -240,6 +240,11 @@ hole). Two tasks
 whose `Allowed` lists overlap are one task mis-partitioned, or they
 run serially.
 
+A task carrying arbitrary user JSON states its numeric precision contract.
+Check a large integer and a precise decimal through the actual transport
+and stored record, plus an unrelated UI edit. Fields the person did not
+change stay out of the patch; typed decoding can otherwise rewrite them.
+
 ## Workflow
 
 1. **Recon and plan.** Explore the repo cheaply yourself (this is
@@ -278,6 +283,15 @@ run serially.
 8. **Gate 3: final acceptance.** Check the whole product against
    `PLAN.md`, run the full suite, write `LESSONS` in `STATE.md`,
    report to the user with evidence. Announce the gate (below).
+
+## Verification evidence
+
+Each report claim names the command or assertion that establishes it.
+Nonverbose test output establishes package success, not zero skipped
+tests. An HTTP 200 or port check establishes reachability, not the
+served build; compare a build identifier or the served artifact bytes.
+For negative-path suites, passing assertions establish expected rejection
+and recovery, not an absence of failed HTTP requests.
 
 ## Dispatch ritual
 
