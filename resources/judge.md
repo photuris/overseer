@@ -98,11 +98,25 @@ one file at a time and cannot see contradictions between files.
 $OVERSEER_JUDGE review .overseer/review/round-2.md
 ```
 
-It prints one JSON line per `### R<n>-<nn>:` item. Act like this:
+It parses only the Review file layout in the skill, and prints one
+JSON line per `### R<n>-<nn>:` item. Check the parse before you act
+on a verdict:
 
-- `"responses": []` on an open item: the implementer did not respond
-  under that item. Send it back. A fix described only in the task
-  file's `Result` leaves the round file without a record.
+- No output from a round file that has findings, or an empty
+  `severity` on an item: the file is not in the layout, and nothing
+  the judge says about it counts. This is not a missing response. Do
+  not send the item back. Read the round yourself, as for any judge
+  failure, and quote the layout in the next brief.
+- A response in the output that stops mid-sentence: its continuation
+  line was not indented two spaces, so the judge dropped the rest.
+  Read that response yourself.
+
+Then act like this:
+
+- `"responses": []` on an open item whose `severity` is set: the
+  implementer did not respond under that item. Send it back. A fix
+  described only in the task file's `Result` leaves the round file
+  without a record.
 - `style_only` above 0.5: the finding is outside the reviewer brief.
   Set it aside unless you disagree.
 - A response of kind `concern`: the item stays `open` (review loop
