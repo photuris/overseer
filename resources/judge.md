@@ -99,21 +99,27 @@ $OVERSEER_JUDGE review .overseer/review/round-2.md
 ```
 
 It parses only the Review file layout in the skill, and prints one
-JSON line per `### R<n>-<nn>:` item. Check the parse before you act
-on a verdict:
+JSON line per `### R<n>-<nn>:` item. This section needs
+`overseer-judge` 0.3.0 or later. Check the parse before you act on a
+verdict:
 
-- No output from a round file that has findings, or an empty
-  `severity` on an item: the file is not in the layout, and nothing
-  the judge says about it counts. This is not a missing response. Do
-  not send the item back. Read the round yourself, as for any judge
-  failure, and quote the layout in the next brief.
-- A response in the output that stops mid-sentence: its continuation
-  line was not indented two spaces, so the judge dropped the rest.
-  Read that response yourself.
+- Exit 2 with `no review items`: no header in the file matched the
+  layout. Read the round yourself, as for any judge failure, and
+  quote the layout in the next brief.
+- A `warnings` field on an item: part of that item did not parse, so
+  the judge's verdict on it does not count. This is not a missing
+  response. Do not send the item back. Read the item yourself. The
+  field is absent when the item parsed in full.
+
+| Warning | What did not parse |
+|---|---|
+| `missing_severity`, `missing_status` | That metadata line is absent, or not a lower-case list line. |
+| `unparsed_response` | A reply sits in the finding in another spelling. The judge saw no reply, and scored `style_only` on finding plus reply. |
+| `text_after_response` | A continuation line was not indented two spaces. The judge dropped the rest of that reply. |
 
 Then act like this:
 
-- `"responses": []` on an open item whose `severity` is set: the
+- `"responses": []` on an open item with no `warnings`: the
   implementer did not respond under that item. Send it back. A fix
   described only in the task file's `Result` leaves the round file
   without a record.
