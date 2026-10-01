@@ -29,6 +29,16 @@ lint, and review classification — is documented in
 `resources/judge.md` and backed by
 [overseer-judge](https://github.com/photuris/overseer-judge).
 
+An optional launcher starts a session from a named profile of role
+commands, in place of setting the roster variables by hand:
+[overseer-launch](https://github.com/photuris/overseer-launch).
+
+| Binary | Needed | Role |
+|--------|--------|------|
+| [`multiplexer-driver`](https://github.com/photuris/multiplexer-driver) | required | runs the harness commands |
+| [`overseer-judge`](https://github.com/photuris/overseer-judge) | optional | typed verdicts for the judge role |
+| [`overseer`](https://github.com/photuris/overseer-launch) | optional | starts a session from a profile |
+
 ## Install
 
 Four pieces: the skill, the driver (required), the judge (optional),
@@ -126,7 +136,7 @@ Copy-Item (Join-Path $tmp 'overseer-judge.exe') $bin
 With a Go toolchain:
 `go install github.com/photuris/overseer-judge/cmd/overseer-judge@latest`.
 
-### 4. Session profiles (optional)
+### 4. The session launcher (optional)
 
 Without this step you set the roster by hand before starting the
 overseer: `OVERSEER_IMPLEMENTER`, `OVERSEER_REVIEWER`, and
@@ -150,6 +160,14 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/photuris/overseer-launc
 powershell -ExecutionPolicy Bypass -c "irm https://github.com/photuris/overseer-launch/releases/latest/download/overseer-launch-installer.ps1 | iex"
 ```
 
+Both put the `overseer` binary in `~/.local/bin`
+(`%USERPROFILE%\.local\bin` on Windows) and add that directory to
+your `PATH` if needed. Check with `overseer --version`. Archives and
+checksums are on the
+[releases page](https://github.com/photuris/overseer-launch/releases/latest);
+with a Rust toolchain you can also build from source:
+`cargo install --git https://github.com/photuris/overseer-launch --locked`.
+
 Then write the example file and edit it:
 
 ```sh
@@ -161,8 +179,7 @@ one table per profile naming the `overseer`, `implementer`, and
 optional `reviewer` and `judge` commands, each a full command with a
 pinned model, never a shell alias. `overseer <name>` launches one;
 `overseer` alone launches the file's `default`; `overseer <name>
---print` shows what would launch. With a Rust toolchain:
-`cargo install --git https://github.com/photuris/overseer-launch --locked`.
+--print` shows what would launch.
 
 To have the overseer load this skill at launch, instead of when the
 first implementation task arrives, end the profile's `overseer`
