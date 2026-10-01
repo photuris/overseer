@@ -133,8 +133,9 @@ New-Item -ItemType Directory -Force $bin | Out-Null
 Copy-Item (Join-Path $tmp 'overseer-judge.exe') $bin
 ```
 
-With a Go toolchain:
-`go install github.com/photuris/overseer-judge/cmd/overseer-judge@latest`.
+Check with `overseer-judge --version`. With a Rust toolchain you can
+also build from source:
+`cargo install --git https://github.com/photuris/overseer-judge --locked`.
 
 ### 4. The session launcher (optional)
 
