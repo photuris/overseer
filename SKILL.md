@@ -243,7 +243,13 @@ dev stack before dispatch: selectors guessed from code failed on first
 run in runs 050 and 052. A task that adds an interactive form states
 what happens when a second form opens over a dirty one and to edits
 made while a save is in flight (run 052 paid a review round for that
-hole). Two tasks
+hole). A task whose code or tests are gated by platform (`#[cfg(unix)]`,
+build tags, a Windows-only branch) is not accepted on local results
+alone: run the other platform's CI, or a cross-target lint, first. A
+Linux box cannot see an import used only under another `cfg`, or a
+CRLF checkout that changes fixture bytes; commit a `.gitattributes`
+that pins line endings before fixtures land (seen in multiplexer-driver
+run 2 and overseer-judge run 2). Two tasks
 whose `Allowed` lists overlap are one task mis-partitioned, or they
 run serially.
 
