@@ -176,8 +176,8 @@ root. Prompts carry only short nudges pointing at files, e.g.
 Review findings are individually addressable items with a stable ID
 (`R1-03`), a severity (`blocking` or `minor`), and a status: `open`,
 `agreed`, `rebutted`, `deadlocked`, `resolved`. Rebuttals are appended
-under the item they answer. One disputed item never blocks items
-already settled.
+under the item they answer, in the layout under Review file. One
+disputed item never blocks items already settled.
 
 Ledger commits stage the ledger by path (`git add .overseer`), never
 `git commit -a`: in a shared checkout `-a` sweeps an implementer's
@@ -257,6 +257,56 @@ A task carrying arbitrary user JSON states its numeric precision contract.
 Check a large integer and a precise decimal through the actual transport
 and stored record, plus an unrelated UI edit. Fields the person did not
 change stay out of the patch; typed decoding can otherwise rewrite them.
+
+## Review file
+
+Every round file has this layout, exactly. The reviewer and the
+implementer never load this skill, so the layout reaches them only
+through you: quote the block below in the reviewer brief and in the
+implementer's review dispatch brief, every round.
+
+```markdown
+# Task 003, round 1
+
+### R1-01: Limiter ignores the burst setting
+
+- file: src/limiter.py
+- severity: blocking
+- status: open
+
+`src/limiter.py:41` reads `rate` and never reads `burst`, so a burst
+of 20 is throttled like a burst of 1. Repro: `uv run pytest -k burst`.
+
+- response: fixed in abc1234. The limiter now reads `burst` from
+  config; `tests/test_limiter.py::test_burst` covers it.
+
+### R1-02: No test covers a zero rate
+
+- severity: minor
+- status: open
+
+A rate of 0 is not exercised by any test.
+
+- response: evidence: `tests/test_limiter.py:88` asserts that a zero
+  rate raises `ValueError`.
+```
+
+- The reviewer writes the header, the metadata, and the finding. The
+  header is `### R<round>-<nn>: title`: three hashes, then a colon.
+- The metadata is one block of lower-case list lines directly under
+  the header. `severity` and `status` are required. `file` is left out
+  when a finding is not about one file.
+- The implementer writes one `- response:` line under the finding and
+  indents every continuation line two spaces. It opens with what the
+  reply does: `fixed in <sha>`, `evidence:`, or `concern:`. A later
+  reply to the same item is another `- response:` line.
+
+The layout is what makes an item addressable, and it is the only
+layout the judge parses. A reply written any other way (`Response
+(fixed, abc1234): ...`, a `#### Response` header, bare `Severity:`
+lines) reads fine to a person and is invisible to a tool: in two runs
+every round file was improvised, and the judge reported every answered
+item as unanswered.
 
 ## Workflow
 
@@ -396,10 +446,12 @@ madness; only transcript content does.
 The reviewer brief: read the diff against the task spec and `PLAN.md`;
 report gaps that affect correctness, the stated acceptance criteria, or
 scope (changes outside `Allowed`); do not report style preferences.
-Mark each finding `blocking` or `minor`.
+Mark each finding `blocking` or `minor`. Write the round file in the
+Review file layout, quoted in the brief.
 
 1. Reviewer writes per-item findings to `review/round-N.md`.
-2. Implementer addresses or rebuts each item in place. A rebuttal is
+2. Implementer addresses or rebuts each item in place, as a
+   `- response:` line in the Review file layout. A rebuttal is
    typed `evidence` (a code citation, a test, a repro) or `concern`
    (an argument). Only an evidence rebuttal can move an item to
    `rebutted`; a concern leaves it `open` for the next round. With a
