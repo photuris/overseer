@@ -1,0 +1,69 @@
+# Runs the two setup scripts for real on each platform they support.
+# This is the only test of install.ps1: it needs Windows.
+name: install
+
+on:
+  push:
+    branches: [main]
+    paths: [install.sh, install.ps1, .github/workflows/install.yml]
+  pull_request:
+    paths: [install.sh, install.ps1, .github/workflows/install.yml]
+  workflow_dispatch:
+
+jobs:
+  sh:
+    name: install.sh (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: all three, piped as the README shows
+        run: sh -s < install.sh
+      - name: binaries run
+        run: |
+          ~/.local/bin/multiplexer-driver --version
+          ~/.local/bin/overseer-judge --version
+          ~/.local/bin/overseer --version
+      - name: skip flags install only the driver
+        run: |
+          rm -rf ~/.local/bin
+          sh install.sh --no-judge --no-launch
+          test -x ~/.local/bin/multiplexer-driver
+          test ! -e ~/.local/bin/overseer-judge
+          test ! -e ~/.local/bin/overseer
+      - name: unknown option is exit 2
+        run: |
+          code=0; sh install.sh --bogus || code=$?
+          test "$code" = 2
+
+  ps1:
+    name: install.ps1 (windows-latest)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+      - name: all three, through iex as the README shows
+        run: Get-Content install.ps1 -Raw | Invoke-Expression
+      - name: binaries run
+        run: |
+          $bin = Join-Path $HOME '.local\bin'
+          & "$bin\multiplexer-driver.exe" --version
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & "$bin\overseer-judge.exe" --version
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & "$bin\overseer.exe" --version
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: skip flags install only the driver
+        run: |
+          $bin = Join-Path $HOME '.local\bin'
+          Remove-Item -Recurse -Force $bin
+          powershell -ExecutionPolicy Bypass -File install.ps1 -NoJudge -NoLaunch
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (-not (Test-Path "$bin\multiplexer-driver.exe")) { exit 1 }
+          if (Test-Path "$bin\overseer-judge.exe") { exit 1 }
+          if (Test-Path "$bin\overseer.exe") { exit 1 }
