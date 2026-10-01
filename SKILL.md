@@ -91,14 +91,14 @@ The reviewer command should run a different model family from the
 overseer and implementers. An independent check exists to remove
 correlated blind spots; same-family review keeps them.
 
-`OVERSEER_IMPLEMENTER` may name a role or shorthand rather than a
-literal command your driver can run as-is (a kind+model pair, a shell
-alias, a wrapper function). Honor the intent rather than treating an
-unresolvable command as "unset" — your driver documents how to resolve
-these for its tool; if a shorthand resolves to something your driver
-has no direct equivalent for (a shell alias/function rather than an
-executable, say), fall back to whatever general-purpose launch method
-the driver offers and record the real, resolved command in `STATE.md`.
+Roster commands are normally literal: the optional `overseer`
+launcher sets them from a profile of full commands (format in
+`resources/profiles.example.toml`). A shorthand that still arrives (a
+kind+model pair, a shell alias, a wrapper function) means the user
+bypassed the launcher. Honor the intent rather than treating it as
+"unset": resolve it through whatever general-purpose launch method
+your driver offers and record the real, resolved command in
+`STATE.md`.
 
 If `OVERSEER_IMPLEMENTER` is unset, say so and work solo. Use your
 harness driver for all agent-launch and session mechanics; do not

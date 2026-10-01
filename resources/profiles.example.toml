@@ -1,0 +1,31 @@
+# Overseer session profiles. `overseer <name>` sets the OVERSEER_* roster
+# variables from one profile and execs its `overseer` command in the
+# current pane. `overseer` alone uses `default`.
+#
+# Full commands only. Each value runs under `sh -c` (`cmd /C` on
+# Windows), a non-interactive shell, so shell aliases from your rc file
+# are not visible here. HERDR_OVERSEER=1 is set automatically when
+# HERDR_ENV=1; do not put it in a profile.
+#
+# A twin of this file ships with the overseer skill as
+# resources/profiles.example.toml.
+
+default = "claude"
+
+[profiles.claude]
+overseer    = "claude"
+implementer = "claude --model claude-sonnet-5-5"
+reviewer    = "codex -c model_reasoning_effort=medium --model gpt-6-astra"
+judge       = "overseer-judge"
+
+[profiles.open]
+overseer    = "pi --model code/kimi-k3"
+implementer = "pi --model code/glm-5.3"
+reviewer    = "pi --model code/ds-v4-pro"
+judge       = "overseer-judge"
+
+[profiles.codex]
+overseer    = "codex -c model_reasoning_effort=medium --model gpt-6-astra"
+implementer = "claude --model claude-opus-5-5"
+reviewer    = "claude --model claude-opus-5-5"
+judge       = "overseer-judge"
