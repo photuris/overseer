@@ -7,9 +7,10 @@ second per call. It exists to save your attention on the common case,
 not to make decisions for you.
 
 Source: [`github.com/photuris/overseer-judge`][overseer-judge]. Install
-with `go install
-github.com/photuris/overseer-judge/cmd/overseer-judge@latest`, or a
-prebuilt binary from its [releases page][overseer-judge-releases]. It
+a prebuilt binary from its [releases page][overseer-judge-releases]
+(this repository's README has the one-line install commands), or
+build from source with `cargo install --git
+https://github.com/photuris/overseer-judge --locked`. It
 reads its API key from `TYPESAFE_API_KEY`, else from `~/.config/jev`.
 Run `overseer-judge <verb> --help` for flags. Every verb accepts
 `--dry-run`, which prints the request and makes no network call.
