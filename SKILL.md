@@ -179,6 +179,10 @@ Review findings are individually addressable items with a stable ID
 under the item they answer. One disputed item never blocks items
 already settled.
 
+Ledger commits stage the ledger by path (`git add .overseer`), never
+`git commit -a`: in a shared checkout `-a` sweeps an implementer's
+uncommitted work into your commit (seen in jevmail run 1).
+
 Keep `STATE.md` current after every phase change. It is how you recover
 after context compaction and how the user checks progress remotely.
 
@@ -225,7 +229,10 @@ implementer records `BASE` at step 0 and the fix sha at commit), never
 `HEAD`: the overseer's ledger commits land on top within minutes and
 turn every HEAD-based check into a false fail (seen in runs 046 and
 048). An acceptance command must fail when the thing it checks fails.
-Put `set -o pipefail` in front of any pipeline: without it,
+A grep over `go test -v` output must allow Go's duration suffix:
+`--- PASS: TestName (0.00s)`, so end the pattern in ` \(`, never `$`
+(every task in jevmail run 1 had this defect). Put `set -o pipefail`
+in front of any pipeline: without it,
 `go test ./... | tail -5` exits 0 on a failed test. Assert an exit
 code against a built binary, never through a runner that rewrites it:
 `go run` turns every non-zero exit into 1 (seen in three runs).

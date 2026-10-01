@@ -13,19 +13,20 @@ directly.
   commands here.
 - `resources/<harness>.md` — one file per harness, mapping the
   abstract interface onto that harness's real commands. `tmux.md` and
-  `herdr.md` point at the [overseer-driver][driver] CLI, which
+  `herdr.md` point at the [multiplexer-driver][driver] CLI, which
   implements the mapping deterministically instead of leaving it to
   LLM prose. `judge.md` documents the optional judge role, backed by
   [overseer-judge][judge].
 
-[driver]: https://github.com/photuris/overseer-driver
+[driver]: https://github.com/photuris/multiplexer-driver
 [judge]: https://github.com/photuris/overseer-judge
 
 ## Keep in sync
 
 A change to the abstract interface (a new primitive, a changed
 contract) is a change to every `resources/<harness>.md` file, and
-usually to `overseer-driver`'s `driver.Driver` interface too. Don't
+usually to `multiplexer-driver`'s `Driver` trait (`src/driver.rs`) and
+its command map too. Don't
 edit one side without checking the others.
 
 ## Conventions

@@ -39,7 +39,7 @@ Feed it a bounded pane read with styling preserved. Styling matters:
 it is how the tool drops an agent's greyed-out prompt suggestion.
 
 ```bash
-overseer-driver read --harness <harness> --target <handle> --lines 60 --ansi \
+multiplexer-driver --harness <harness> pane read <handle> --lines 60 --ansi \
   | jq -r .output \
   | $OVERSEER_JUDGE session --input - --agent <kind>
 ```
@@ -120,7 +120,7 @@ differs from your own read, save both and note it in `STATE.md`:
 
 ```bash
 mkdir -p .overseer/judge
-overseer-driver read --harness <harness> --target <handle> --lines 60 --ansi \
+multiplexer-driver --harness <harness> pane read <handle> --lines 60 --ansi \
   | jq -r .output > .overseer/judge/003-impl-idle-vs-working.ansi
 $OVERSEER_JUDGE session --input .overseer/judge/003-impl-idle-vs-working.ansi \
   --agent <kind> > .overseer/judge/003-impl-idle-vs-working.json
