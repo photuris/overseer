@@ -95,8 +95,11 @@ powershell -ExecutionPolicy Bypass -c "irm https://github.com/photuris/multiplex
 ```
 
 Both put the binary in `~/.local/bin` (`%USERPROFILE%\.local\bin` on
-Windows) and add that directory to your `PATH` if needed. Check with
-`multiplexer-driver --version`. Archives and checksums are on the
+Windows) and add that directory to your `PATH` if needed. If the
+installer added it, open a new terminal, or run the reload command the
+installer prints, before the next step. Check with
+`multiplexer-driver --version`.
+Archives and checksums are on the
 [releases page](https://github.com/photuris/multiplexer-driver/releases/latest);
 with a Rust toolchain you can also build from source:
 `cargo install --git https://github.com/photuris/multiplexer-driver --locked`.
@@ -140,34 +143,28 @@ The roster commands you set are then the only limit on what runs.
 task-file lint, review typing) into fast, typed verdicts. Only needed
 if you enable it — see `resources/judge.md`. It reads its API key
 from `TYPESAFE_API_KEY` or `~/.config/jev`. Install the prebuilt
-binary into the same `~/.local/bin` (install the driver first, so that
-directory is on your `PATH`):
+binary:
 
 **Linux and macOS:**
 
 ```sh
-v=$(curl -fsSL https://api.github.com/repos/photuris/overseer-judge/releases/latest | sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p')
-os=$(uname -s | tr '[:upper:]' '[:lower:]'); arch=$(uname -m)
-case $arch in x86_64) arch=amd64;; aarch64|arm64) arch=arm64;; esac
-mkdir -p ~/.local/bin
-curl -fsSL "https://github.com/photuris/overseer-judge/releases/download/v$v/overseer-judge_${v}_${os}_${arch}.tar.gz" | tar -xz -C ~/.local/bin overseer-judge
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/photuris/overseer-judge/releases/latest/download/overseer-judge-installer.sh | sh
 ```
 
 **Windows** (PowerShell):
 
 ```powershell
-$v = (Invoke-RestMethod https://api.github.com/repos/photuris/overseer-judge/releases/latest).tag_name.TrimStart('v')
-$arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'amd64' }
-$tmp = Join-Path $env:TEMP 'overseer-judge'
-Invoke-WebRequest "https://github.com/photuris/overseer-judge/releases/download/v$v/overseer-judge_${v}_windows_$arch.zip" -OutFile "$tmp.zip"
-Expand-Archive "$tmp.zip" -DestinationPath $tmp -Force
-$bin = Join-Path $HOME '.local\bin'
-New-Item -ItemType Directory -Force $bin | Out-Null
-Copy-Item (Join-Path $tmp 'overseer-judge.exe') $bin
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/photuris/overseer-judge/releases/latest/download/overseer-judge-installer.ps1 | iex"
 ```
 
-Check with `overseer-judge --version`. With a Rust toolchain you can
-also build from source:
+Both put the binary in `~/.local/bin` (`%USERPROFILE%\.local\bin` on
+Windows) and add that directory to your `PATH` if needed. If the
+installer added it, open a new terminal, or run the reload command the
+installer prints, before the next step. Check with
+`overseer-judge --version`.
+Archives and checksums are on the
+[releases page](https://github.com/photuris/overseer-judge/releases/latest);
+with a Rust toolchain you can also build from source:
 `cargo install --git https://github.com/photuris/overseer-judge --locked`.
 
 ### 4. The session launcher (optional)
@@ -196,8 +193,10 @@ powershell -ExecutionPolicy Bypass -c "irm https://github.com/photuris/overseer-
 
 Both put the `overseer` binary in `~/.local/bin`
 (`%USERPROFILE%\.local\bin` on Windows) and add that directory to
-your `PATH` if needed. Check with `overseer --version`. Archives and
-checksums are on the
+your `PATH` if needed. If the installer added it, open a new
+terminal, or run the reload command the installer prints, before the
+next step. Check with `overseer --version`. Archives and checksums are
+on the
 [releases page](https://github.com/photuris/overseer-launch/releases/latest);
 with a Rust toolchain you can also build from source:
 `cargo install --git https://github.com/photuris/overseer-launch --locked`.
