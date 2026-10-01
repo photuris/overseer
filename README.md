@@ -101,6 +101,39 @@ Windows) and add that directory to your `PATH` if needed. Check with
 with a Rust toolchain you can also build from source:
 `cargo install --git https://github.com/photuris/multiplexer-driver --locked`.
 
+#### Claude Code in auto mode: allow the spawn commands
+
+Do this once if the overseer runs as Claude Code in auto mode. Skip it
+otherwise.
+
+In auto mode a classifier checks each shell command before it runs. It
+denies a command that starts an agent with approvals turned off, such
+as a reviewer set to `codex --yolo`. The run then stops at the first
+spawn. Two allow rules in `~/.claude/settings.json` prevent that:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(multiplexer-driver --harness herdr pane spawn:*)",
+      "Bash(multiplexer-driver --harness herdr pane split:*)"
+    ]
+  }
+}
+```
+
+Add the two lines to the `allow` array you already have. For tmux,
+write `--harness tmux` in both. A run that uses worktrees (three or
+more implementers at once under Herdr) starts agents with
+`herdr agent start`, so add `"Bash(herdr agent start:*)"` for that
+case.
+
+Add the rules yourself, before the first run. Claude Code does not let
+the overseer change its own permissions, even at your request.
+
+The rules skip the classifier for every command the driver starts.
+The roster commands you set are then the only limit on what runs.
+
 ### 3. The judge (optional)
 
 `overseer-judge` turns a few recurring judgment calls (pane state,

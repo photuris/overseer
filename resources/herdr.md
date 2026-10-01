@@ -111,6 +111,34 @@ Always pass `--add-dir <path>` (as part of the trailing `-- <command
 without it the first outside read blocks on a permission prompt (seen
 in three consecutive runs).
 
+## Claude Code auto mode
+
+When you run as Claude Code in auto mode, a classifier checks each
+shell command. It denies a spawn whose command starts an agent with
+approvals off (seen with `codex --yolo`, reason "Create Unsafe
+Agents"). The user clears this with allow rules in
+`~/.claude/settings.json`. The README's driver section lists them:
+
+```json
+"Bash(multiplexer-driver --harness herdr pane spawn:*)",
+"Bash(multiplexer-driver --harness herdr pane split:*)"
+```
+
+- An allow rule is a prefix match on the whole command. Issue every
+  `pane spawn` and `pane split` as a bare command that starts with
+  `multiplexer-driver --harness herdr`. A spawn inside an `&&`
+  chain, after a `cd`, or after a heredoc does not match, and the
+  classifier denies it again (seen in one run). Do not use the
+  `MULTIPLEXER_DRIVER_HARNESS` short form for these two commands.
+- You cannot add the rules. The classifier denies an edit to your own
+  settings as self-modification, and a user request does not clear
+  that. On the first denied spawn, stop, give the user the rules, and
+  wait.
+- Do not retry a denied spawn with other quoting or through another
+  command. That is the outcome the classifier denied.
+- The worktree path in Isolation starts agents with `herdr agent
+  start`. It needs its own rule, `Bash(herdr agent start:*)`.
+
 ## Dialogs
 
 `prompt` cannot answer a folder-trust or approval dialog — Herdr
