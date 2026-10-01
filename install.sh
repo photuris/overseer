@@ -59,10 +59,11 @@ trap 'rm -rf "$tmp"' EXIT
 
 # Runs the release installer of the GitHub project photuris/$1. The
 # installer is downloaded to a file first: `curl | sh` would hide a
-# failed download, because sh exits 0 on empty input.
+# failed download, because sh exits 0 on empty input. `--retry` covers
+# a transient 5xx from the release host (seen once in CI).
 install() {
     echo "==> $1"
-    curl --proto '=https' --tlsv1.2 -LsSf \
+    curl --proto '=https' --tlsv1.2 -LsSf --retry 3 \
         "https://github.com/photuris/$1/releases/latest/download/$1-installer.sh" \
         -o "$tmp/$1-installer.sh"
     sh "$tmp/$1-installer.sh"
