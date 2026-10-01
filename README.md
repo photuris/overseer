@@ -31,9 +31,9 @@ lint, and review classification — is documented in
 
 ## Install
 
-Three pieces: the skill, the driver (required), and the judge
-(optional). Each is one copy-paste command. No toolchain is needed:
-the driver and the judge are prebuilt binaries.
+Four pieces: the skill, the driver (required), the judge (optional),
+and the session launcher (optional). Each is one copy-paste command.
+No toolchain is needed: the binaries are prebuilt.
 
 ### 1. The skill itself
 
@@ -125,6 +125,44 @@ Copy-Item (Join-Path $tmp 'overseer-judge.exe') $bin
 
 With a Go toolchain:
 `go install github.com/photuris/overseer-judge/cmd/overseer-judge@latest`.
+
+### 4. Session profiles (optional)
+
+Without this step you set the roster by hand before starting the
+overseer: `OVERSEER_IMPLEMENTER`, `OVERSEER_REVIEWER`, and
+`OVERSEER_JUDGE` as full commands, plus `HERDR_OVERSEER=1` under
+Herdr. That keeps working unchanged.
+
+[overseer-launch](https://github.com/photuris/overseer-launch) replaces
+the hand-set variables with named profiles in one TOML file, so
+`overseer claude` inside a Herdr pane or tmux window exports the roster
+and starts that profile's overseer there. Install the prebuilt binary:
+
+**Linux and macOS:**
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/photuris/overseer-launch/releases/latest/download/overseer-launch-installer.sh | sh
+```
+
+**Windows** (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/photuris/overseer-launch/releases/latest/download/overseer-launch-installer.ps1 | iex"
+```
+
+Then write the example file and edit it:
+
+```sh
+overseer init          # ~/.config/overseer/profiles.toml
+```
+
+The format is in [`resources/profiles.example.toml`](resources/profiles.example.toml):
+one table per profile naming the `overseer`, `implementer`, and
+optional `reviewer` and `judge` commands, each a full command with a
+pinned model, never a shell alias. `overseer <name>` launches one;
+`overseer` alone launches the file's `default`; `overseer <name>
+--print` shows what would launch. With a Rust toolchain:
+`cargo install --git https://github.com/photuris/overseer-launch --locked`.
 
 ## License
 

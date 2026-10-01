@@ -92,11 +92,13 @@ instead (see the `herdr` skill).
 
 ## Roster resolution
 
-`OVERSEER_IMPLEMENTER` may be a kind+model shorthand rather than a
-runnable command (seen twice: `claude-opus`). Honor the intent:
+With the `overseer` launcher the roster is literal commands. A
+kind+model shorthand (seen twice: `claude-opus`) means the user set
+the variables by hand. Honor the intent:
 `multiplexer-driver --harness herdr pane spawn --name impl-003 --
-claude --model opus` and record the banner's model in the roster; do not
-treat the unresolvable shorthand as "unset". When the banner has
+claude --model opus`, record the banner's model in the roster, and do
+not treat the unresolvable shorthand as "unset"; `overseer init`
+(README, install step 4) is the fix for next time. When the banner has
 scrolled off (seen in two runs), the pane's process shows the
 resolved command line, e.g. `claude --model claude-opus-5`:
 

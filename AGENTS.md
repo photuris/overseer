@@ -17,9 +17,15 @@ directly.
   implements the mapping deterministically instead of leaving it to
   LLM prose. `judge.md` documents the optional judge role, backed by
   [overseer-judge][judge].
+- `resources/profiles.example.toml` — the session-profile format read
+  by the optional [overseer-launch][launch] binary (`overseer
+  <profile>`), which sets the roster variables before the skill runs.
+  It is a twin of that repo's `profiles.example.toml`; change both.
+  Not part of the primitive interface.
 
 [driver]: https://github.com/photuris/multiplexer-driver
 [judge]: https://github.com/photuris/overseer-judge
+[launch]: https://github.com/photuris/overseer-launch
 
 ## Keep in sync
 
