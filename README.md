@@ -42,8 +42,9 @@ commands, in place of setting the roster variables by hand:
 ## Install
 
 Four pieces: the skill, the driver (required), the judge (optional),
-and the session launcher (optional). Each is one copy-paste command.
-No toolchain is needed: the binaries are prebuilt.
+and the session launcher (optional). Each is one copy-paste command,
+and one setup script installs the three binaries together. No
+toolchain is needed: the binaries are prebuilt.
 
 ### 1. The skill itself
 
@@ -75,6 +76,37 @@ Restart the harness (or start a new session) if it doesn't pick the
 skill up immediately.
 
 [agentskills]: https://agentskills.io
+
+### All three binaries at once
+
+The setup script in this repository runs the installers from steps 2
+to 4 in turn and prints the versions. Use it in place of those steps.
+
+**Linux and macOS:**
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/photuris/overseer/main/install.sh | sh
+```
+
+**Windows** (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/photuris/overseer/main/install.ps1 | iex"
+```
+
+The binaries go in `~/.local/bin` (`%USERPROFILE%\.local\bin` on
+Windows). If an installer added that directory to your `PATH`, open a
+new terminal before you use them.
+
+To skip an optional binary, run the script from your clone of the
+skill with a flag: `sh install.sh --no-judge` or `--no-launch`, and on
+Windows `powershell -ExecutionPolicy Bypass -File install.ps1
+-NoJudge` or `-NoLaunch`. The piped form takes the same flags:
+`... | sh -s -- --no-judge`.
+
+The script does not install the skill (step 1) and does not write a
+profile file. With the launcher installed, run `overseer init` next,
+as step 4 describes.
 
 ### 2. The driver (required)
 
