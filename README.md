@@ -164,6 +164,23 @@ pinned model, never a shell alias. `overseer <name>` launches one;
 --print` shows what would launch. With a Rust toolchain:
 `cargo install --git https://github.com/photuris/overseer-launch --locked`.
 
+To have the overseer load this skill at launch, instead of when the
+first implementation task arrives, end the profile's `overseer`
+command with a starting prompt. `claude`, `codex`, and `pi` all take
+one as a trailing argument:
+
+```toml
+[profiles.claude]
+overseer = "claude 'Load the overseer skill and confirm the roster.'"
+```
+
+Claude Code also takes the slash command there, `claude '/overseer'`;
+use the sentence if your version shows it as plain text. The agent
+takes one paid turn at startup and the roster check runs before you
+type a task. The
+[launcher README](https://github.com/photuris/overseer-launch#loading-the-skill-at-startup)
+has the other agents and a lighter system-prompt variant.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
