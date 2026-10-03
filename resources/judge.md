@@ -20,7 +20,7 @@ Run `overseer-judge <verb> --help` for flags. Every verb accepts
 
 ## Rules that hold for every use
 
-- **It is on the roster or it is not.** `OVERSEER_JUDGE` unset means
+- **It is on the roster or it is not.** No judge on the roster means
   this file does not apply. Do every step the way the skill says.
 - **It sends content off the machine.** Pane text, task files, and
   review files go to a third-party API. Never put it on the roster for
