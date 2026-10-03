@@ -17,6 +17,7 @@ that interface onto real commands.
 |---------|--------|
 | tmux | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
 | Herdr | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| T3 Code (0.0.46+) | T3 orchestrator MCP tools ([`resources/t3.md`](resources/t3.md)) |
 
 `multiplexer-driver` is a small CLI that implements the deterministic
 half of the mapping (the actual commands), so the skill itself only
@@ -35,7 +36,7 @@ commands, in place of setting the roster variables by hand:
 
 | Binary | Needed | Role |
 |--------|--------|------|
-| [`multiplexer-driver`](https://github.com/photuris/multiplexer-driver) | required | runs the harness commands |
+| [`multiplexer-driver`](https://github.com/photuris/multiplexer-driver) | required for tmux and Herdr | runs the harness commands |
 | [`overseer-judge`](https://github.com/photuris/overseer-judge) | optional | typed verdicts for the judge role |
 | [`overseer`](https://github.com/photuris/overseer-launch) | optional | starts a session from a profile |
 
@@ -109,6 +110,8 @@ profile file. With the launcher installed, run `overseer init` next,
 as step 4 describes.
 
 ### 2. The driver (required)
+
+T3 Code users can skip this step.
 
 `multiplexer-driver` does the deterministic half of the work (spawn,
 read, prompt, wait, list, rename, interrupt, status) for whatever
