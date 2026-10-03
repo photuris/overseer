@@ -204,7 +204,10 @@ Commit before writing Result. No stubs, placeholders, or TODO bodies.
 Do not edit or skip tests to make Acceptance pass; report instead.
 Search the repo before assuming something is missing.
 For every new test, name in Result the one-line change to the code
-under test that makes it fail, and say that you ran it.
+under test that makes it fail, and say that you ran it. The change
+must alter the behavior the test claims to cover. The test must then
+fail on its own assertion, not on a build, import, or setup error.
+The unmutated test must pass.
 ## Result            (implementer writes)
 ## Verification      (overseer or verifier writes: captured output)
 ```
