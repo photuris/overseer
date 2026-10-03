@@ -156,6 +156,11 @@ Agents"). The user clears this with allow rules in
   wait.
 - Do not retry a denied spawn with other quoting or through another
   command. That is the outcome the classifier denied.
+- A Claude Code implementer can stop before its commit on a transient
+  tool error such as "Bash classifier errored on three attempts"
+  (seen twice in run fix-1). That is not degradation: with a coherent
+  transcript, re-prompt it once with the task nudge (the core skill's
+  health watch has the general rule).
 - The worktree path in Isolation starts agents with `herdr agent
   start`. It needs its own rule, `Bash(herdr agent start:*)`.
 
@@ -307,7 +312,8 @@ Create each worktree from your own workspace, never from a path:
 ```bash
 resp=$(herdr worktree create --workspace "$HERDR_WORKSPACE_ID" --branch task/003 --base main --no-focus)
 pane=$(echo "$resp" | jq -r .result.root_pane.pane_id)   # the new workspace's shell pane
-herdr agent start impl-003 --kind claude --pane "$pane" --timeout 60000 -- --model opus
+herdr agent start impl-003 --kind claude --pane "$pane" \
+  --timeout 60000 -- --model opus --add-dir "$PWD/.overseer"
 ```
 
 The worktree opens as its own workspace; the implementer starts in
@@ -315,16 +321,31 @@ that workspace's root pane (`herdr agent start`, not `spawn`, which
 would land in your workspace and the main checkout). The checkout path
 is `.result.worktree.path`.
 
-A gitignored ledger does not exist in a new worktree. Link it, and
-copy whatever untracked install the task needs (a `node_modules`,
-say), before the implementer starts:
-`ln -s "$PWD/.overseer" "$wt/.overseer"`. Claude Code then asks for
-permission the first time the implementer reads or writes a file
-through that symlink ("resolves through a symlink ... outside the
-allowed working directories"). The agent shows as `blocked`. Answer
-with `herdr agent send-keys <name> 2` ("always allow" for the
-ledger's tasks directory), not Enter, so it does not ask again later
-in the task (seen in two consecutive runs, several times each).
+A gitignored ledger does not exist in a new worktree. Do not symlink
+it. Claude Code refuses a file reached through a symlink that
+resolves outside its working directories, and neither `--add-dir` nor
+a permission allow rule lifts that check (tested 2026-10-03; the
+symlink cost manual prompt answers in two runs).
+
+- Start the implementer with `--add-dir` naming the main checkout's
+  absolute `.overseer` path, and name every ledger file by its
+  absolute path in every nudge and brief.
+- `--add-dir` takes every following argument up to the next flag as
+  a directory, so a "positional" prompt placed after it is swallowed.
+  Put it after the other flags, and never directly before a prompt
+  argument.
+- Copy whatever untracked install the task needs (a `node_modules`,
+  say) before the implementer starts.
+- For a non-Claude implementer, use that tool's own equivalent and
+  confirm one ledger write works before the first dispatch.
+
+A worktree implementer's nudge names the task file by absolute path
+(`resources/t3.md` "Ledger paths" does the same for T3):
+
+```
+Task ready: /abs/main/checkout/.overseer/tasks/003-rate-limit.md.
+Respond in that file.
+```
 
 `--cwd` resolves the repo's parent workspace by scanning the sidebar
 for the first workspace whose first-tab pane happens to sit in that

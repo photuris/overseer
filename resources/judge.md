@@ -100,8 +100,11 @@ $OVERSEER_JUDGE review .overseer/review/round-2.md
 
 It parses only the Review file layout in the skill, and prints one
 JSON line per `### R<n>-<nn>:` item. This section needs
-`overseer-judge` 0.3.0 or later. Check the parse before you act on a
-verdict:
+`overseer-judge` 0.3.0 or later. Live verdict records carry the
+item's `status` from 0.3.2 on; on 0.3.0 and 0.3.1 no record has a
+`status` key, so read each item's `- status:` line in the round file
+yourself. `--dry-run` request records never carry `status`. Check the
+parse before you act on a verdict:
 
 - Exit 2 with `no review items`: no header in the file matched the
   layout. Read the round yourself, as for any judge failure, and
@@ -117,12 +120,33 @@ verdict:
 | `unparsed_response` | A reply sits in the finding in another spelling. The judge saw no reply, and scored `style_only` on finding plus reply. |
 | `text_after_response` | A continuation line was not indented two spaces. The judge dropped the rest of that reply. |
 
-Then act like this:
+Each warning also prints on stderr as one `WARN` log line per
+warning, before any record, on both the dry-run and the live path, in
+this form:
 
-- `"responses": []` on an open item with no `warnings`: the
-  implementer did not respond under that item. Send it back. A fix
-  described only in the task file's `Result` leaves the round file
-  without a record.
+```
+2026-10-03T17:57:51.198166Z  WARN overseer_judge::cli: review item did not fully parse id=R1-01 warning="missing_severity"
+```
+
+So a pipe to `jq` must not merge stderr (`2>&1`): use `2>/dev/null`
+on the pipe and read stderr separately, or pass `--log-level error`
+to silence the lines.
+
+These rules apply to live records with no `warnings`; the warnings
+rule above still comes first. Then act like this:
+
+- `"responses": []` on an item with `status: open`: the implementer
+  did not respond under that item. Send it back. A fix described
+  only in the task file's `Result` leaves the round file without a
+  record.
+- `"responses": []` with `status` `resolved` or `rebutted`: you
+  settled the item directly. Nothing to send back.
+- `status` `agreed`: the implementer accepted the finding; verify the
+  fix before you set it `resolved`.
+- `status` `deadlocked`: adjudicate (review loop, step 6).
+- Any other `status` value, or no `status` key on 0.3.2 or later (the
+  item has no `- status:` line and carries `missing_status`): read
+  the item yourself.
 - `style_only` above 0.5: the finding is outside the reviewer brief.
   Set it aside unless you disagree.
 - A response of kind `concern`: the item stays `open` (review loop
