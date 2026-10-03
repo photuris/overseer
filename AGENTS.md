@@ -17,6 +17,11 @@ directly.
   implements the mapping deterministically instead of leaving it to
   LLM prose. `judge.md` documents the optional judge role, backed by
   [overseer-judge][judge].
+- `resources/t3.md` — the T3 Code driver. Unlike `tmux.md` and
+  `herdr.md`, it uses no CLI: the overseer runs as a T3 thread and
+  calls T3's orchestrator MCP tools directly.
+- `resources/t3.example.toml` — the T3 roster format. The skill reads
+  `t3.toml` itself. overseer-launch does not read it.
 - `resources/profiles.example.toml` — the session-profile format read
   by the optional [overseer-launch][launch] binary (`overseer
   <profile>`), which sets the roster variables before the skill runs.

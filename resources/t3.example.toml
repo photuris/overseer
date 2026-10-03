@@ -1,0 +1,25 @@
+# Overseer roster profiles for T3 Code. The overseer skill reads this
+# file itself when you type `/overseer <name>` in a T3 thread;
+# `/overseer` alone uses `default`. overseer-launch does not read it.
+#
+# Location: $XDG_CONFIG_HOME/overseer/t3.toml, else
+# ~/.config/overseer/t3.toml (%APPDATA%\overseer\t3.toml on Windows).
+#
+# implementer and reviewer are targets:
+#   provider = a T3 provider instance id (orchestrator_capabilities)
+#   model    = a model id under that provider. Required: a target
+#              without a model would inherit the overseer's model.
+#   options  = optional map of option id to value
+# judge is a shell command that the overseer runs with Bash.
+# There is no overseer key: the overseer is the thread you type in.
+
+default = "claude"
+
+[profiles.claude]
+implementer = { provider = "claudeAgent", model = "claude-sonnet-5-5" }
+reviewer    = { provider = "codex", model = "gpt-6.1-sol", options = { reasoningEffort = "high" } }
+judge       = "overseer-judge"
+
+[profiles.cheap]
+implementer = { provider = "claudeAgent", model = "claude-haiku-4-5" }
+reviewer    = { provider = "codex", model = "gpt-5.6-luna", options = { reasoningEffort = "medium" } }
