@@ -105,12 +105,13 @@ reviewer is how review lapses for a dozen tasks unnoticed.
 |------|------|-----------|
 | Overseer (you) | Plans, specs, task decomposition, coordination, adjudication, executed verification of every done claim, trivial mechanical edits | Implementation work: logic, anything needing tests |
 | Implementer | Executes one task at a time from a written task spec; rebuts review findings with reasoning or evidence | Expands scope beyond its task file |
-| Reviewer | Reads diffs against the task spec, writes per-item findings to review files; before Gate 1, critiques the plan | Edits code |
+| Reviewer | Reads diffs against the task spec, writes per-item findings to review files; before Gate 1, critiques the plan | Edits the reviewed checkout (a mutation in a disposable copy is allowed) |
 | Verifier | Executes the task's acceptance and smoke commands in a fresh session that has seen only the criteria and the diff | Reads the implementer transcript; edits code |
 
 Reviewer, verifier, and plan critic all spawn from the reviewer entry.
-The reviewer reads; the verifier executes. They are different sessions
-with different briefs, never the same session.
+The reviewer reads; the verifier executes. The one exception is the
+reviewer's mutation run in a disposable copy (see Review loop). They
+are different sessions with different briefs, never the same session.
 
 Review is opt-in per run, your call: default on for substantial
 features, off for small tasks. But when a reviewer is configured,
@@ -133,9 +134,8 @@ everything else.
 Running a verifier on a five-line task is pure overhead.
 
 The plan critic runs once per run, before Gate 1, when a reviewer is
-configured. It is an experiment: if two consecutive runs produce a
-`review/plan.md` with nothing the user would have caught at the gate,
-drop it and note that in `STATE.md`.
+configured. It found blocking defects before any code in five
+consecutive runs, so it is not optional.
 
 Trivial mechanical edits (typos, version bumps, one-line config, docs
 you author) you make directly — spawning an implementer for a typo
@@ -193,7 +193,7 @@ Read-only: src/config.py
 Anything not listed under Allowed. Name the tempting adjacent work.
 ## Acceptance
 Command: uv run pytest tests/test_limiter.py -q
-Expect: exit 0, "12 passed"
+Expect: exit 0, "12 passed" (change check: fails at BASE)
 ## Smoke            (only when UI, network, device, or cross-process)
 Command: curl -sf localhost:8000/limit | jq .remaining
 Expect: integer <= 100
@@ -203,11 +203,26 @@ Expect: integer <= 100
 Commit before writing Result. No stubs, placeholders, or TODO bodies.
 Do not edit or skip tests to make Acceptance pass; report instead.
 Search the repo before assuming something is missing.
+For every new test, name in Result the one-line change to the code
+under test that makes it fail, and say that you ran it.
 ## Result            (implementer writes)
 ## Verification      (overseer or verifier writes: captured output)
 ```
 
-Write `Acceptance` before spawning the implementer, never after. An
+Write `Acceptance` before spawning the implementer, never after. Then
+run every Acceptance command yourself at `BASE`, in the checkout the
+implementer will use, before dispatch. Each command's `Expect:` line
+says whether it must fail at `BASE` (a change check) or pass at
+`BASE` (a guard, e.g. the full suite); keep the `Command:`/`Expect:`
+line format, which the judge parses. A change check that already
+prints its Expect at `BASE`, or any command that errors for a reason
+other than the missing change, is a spec defect: fix the spec before
+dispatch. The dry run also exposes a miscounted number (a count that
+includes a trailing comma, a test file holding fewer tests than the
+spec says) before an implementer takes the blame (seen in runs
+judge-1 and fix-1). After a task that changes a shared gate (a lint
+rule, a test count, a schema) is accepted, re-read the Acceptance of
+every open task that runs that gate. An
 acceptance criterion you cannot express as a command with expected
 output is not concrete enough for a less capable model. Scope and
 clean-tree checks compare against the task's own commit (the
@@ -226,10 +241,20 @@ Vitest counts name files, not directories, unless the directory
 count was checked with `ls`. An overseer-owned smoke script gets a
 dry run of its navigation (login, reach the target screen) against the
 dev stack before dispatch: selectors guessed from code failed on first
-run in runs 050 and 052. A task that adds an interactive form states
-what happens when a second form opens over a dirty one and to edits
-made while a save is in flight (run 052 paid a review round for that
-hole). A task whose code or tests are gated by platform (`#[cfg(unix)]`,
+run in runs 050 and 052. A UI test that asserts after an
+asynchronous refresh must first wait for something the refresh
+visibly changes; otherwise it asserts on the pre-refresh DOM and
+passes whatever the refresh does (three of five tests that could not
+fail in run fix-1). A task that adds stateful UI (a form, a guard, a
+stale-read notice, a gate) lists its transitions as a table
+("state, event, next state"), including a second failure while
+already in the failure state, recovery, a remount, a second form
+opening over a dirty one, and an edit made while a save is in flight
+(runs 052 and fix-1 paid review rounds for missing rows). A test that
+creates a privileged resource (a database role, an admin connection, a
+credential) registers its cleanup before it creates anything (run fix-1
+left 14 roles with a known password on a local Postgres). A
+task whose code or tests are gated by platform (`#[cfg(unix)]`,
 build tags, a Windows-only branch) is not accepted on local results
 alone: run the other platform's CI, or a cross-target lint, first. A
 Linux box cannot see an import used only under another `cfg`, or a
@@ -348,11 +373,15 @@ Follow your driver's dispatch ritual: how to confirm the agent is
 ready, how to deliver the task, and how to confirm the task took.
 Never assume a dispatch took. Then, for every dispatch:
 
-1. After any wait returns, check the artifact before the status: task
+1. After editing a task file, read the task file back and confirm the
+   edit landed before sending the nudge (twice in run fix-1 a
+   scripted replace failed after the nudge went out and the
+   implementer read the old spec).
+2. After any wait returns, check the artifact before the status: task
    file `Status`/`Result`, then `git log -1`. A `done` status with an
    untouched task file is not completion (rate-limit backoff and API
    errors both produce it).
-2. A wait that times out, or returns without artifact progress: ask
+3. A wait that times out, or returns without artifact progress: ask
    your driver for whatever diagnostic it offers, then read the
    transcript. Find the cause before re-dispatching; a re-prompt on
    top of an unread error repeats it.
@@ -397,6 +426,11 @@ madness; only transcript content does.
   re-nudge of the task — the garbage is in its context and every next
   response is conditioned on it. A degraded session never recovers.
   The session is dead; only the slot is reusable.
+- **A stop is not degradation.** A session stopped by a transient
+  harness tool error, with a coherent transcript, is not degraded.
+  Re-prompt it once with the task nudge; treat a second stop like
+  any failed dispatch. Judge degradation by transcript content, not
+  by a stop.
 - **Recover with a fresh session on the same task file.** The resume
   prompt states that the predecessor degraded, the state of play
   (files present, what fails), and orders an AUDIT of the inherited
@@ -417,7 +451,13 @@ The reviewer brief: read the diff against the task spec and `PLAN.md`;
 report gaps that affect correctness, the stated acceptance criteria, or
 scope (changes outside `Allowed`); do not report style preferences.
 Mark each finding `blocking` or `minor`. Write the round file in the
-Review file layout, quoted in the brief.
+Review file layout, quoted in the brief. For each new test, the
+reviewer applies the mutation the implementer named in Result (or
+one it chooses, under the same conditions as the Task file rule) on
+a scratch copy and runs the test; a test that still passes is a
+`blocking` finding. The scratch copy is a disposable copy (for
+example a `git worktree` of the fix commit in a temp directory); the
+reviewer never edits the reviewed checkout.
 
 1. Reviewer writes per-item findings to `review/round-N.md`.
 2. Implementer addresses or rebuts each item in place, as a
@@ -440,6 +480,25 @@ Review file layout, quoted in the brief.
    deadlocked: stop the loop and adjudicate.
 6. Still deadlocked: you adjudicate on the evidence. Escalate to the
    user only for preference or scope calls, or genuine uncertainty.
+
+You may verify a small fix by replaying the reviewer's reproduction
+instead of running a new round. All of these must hold: the finding
+named a reproduction (a mutation, a probe test, a command); the fix
+is a few lines and its diff stays inside the code the finding named;
+the reproduction gives the right result for its kind. For a behavior
+finding (a probe test, a command), it fails before the fix and
+passes after it. For a vacuous-test finding (a mutation the test
+missed), the reviewer's round-1 record shows the test passing under
+the mutation; after the fix the unmutated test passes and the
+mutated run fails on the test's own assertion. Record the captured
+output in the task's `Verification` as "verified by overseer,
+round-N repro", and set the item's `- status:` to `resolved` in the
+round file (add no other line to the round file). `last reviewed:`
+in `STATE.md` does not advance past the fix, so the next review
+round covers it. Anything larger, or a fix touching code the finding
+did not name, goes back to the reviewer. This replays the reviewer's
+own check; it is not the overseer reviewing its own work, so it does
+not contradict the red flag about substituting for the reviewer.
 
 If review stalls or an implementer flounders, you fix the *spec* or
 reassign the *task* — you do not take over the implementation. Doing
