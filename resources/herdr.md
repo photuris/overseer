@@ -92,6 +92,26 @@ instead (see the `herdr` skill).
 
 ## Roster resolution
 
+The roster arrives as environment variables, each a full shell
+command: `OVERSEER_IMPLEMENTER` (implementer), `OVERSEER_REVIEWER`
+(reviewer), and `OVERSEER_JUDGE` (judge). Confirm them:
+
+```bash
+printf '%s\n' "${OVERSEER_IMPLEMENTER:?not set}" "${OVERSEER_REVIEWER:-none}" "${OVERSEER_JUDGE:-none}"
+```
+
+Roster commands are normally literal: the optional `overseer`
+launcher sets them from a profile of full commands (format in
+`resources/profiles.example.toml`). A shorthand that still arrives (a
+kind+model pair, a shell alias, a wrapper function) means the user
+bypassed the launcher. Honor the intent rather than treating it as
+"unset": resolve it through whatever general-purpose launch method
+this driver offers and record the real, resolved command in
+`STATE.md`.
+
+After every `spawn`, read the model from the agent's own banner and
+record it in the `STATE.md` roster.
+
 With the `overseer` launcher the roster is literal commands. A
 kind+model shorthand (seen twice: `claude-opus`) means the user set
 the variables by hand. Honor the intent:
@@ -178,6 +198,30 @@ herdr pane process-info --pane wF:pA   # argv must now be the shell
 
 Always confirm with `process-info` before reusing the pane: `herdr agent
 start` refuses a pane that still runs the old agent (`agent_pane_busy`).
+
+## Dispatch ritual
+
+Startup dialogs (folder trust, update prompts, imports) and composer
+races eat first prompts on most harnesses. For each dispatch:
+
+1. `read` the target's recent output first — is a dialog sitting at
+   the prompt?
+2. `prompt` the task-ready nudge, waiting for idle with a generous
+   timeout.
+3. If the wait reports the prompt as stalled, or returns with the agent still
+   `idle`: `read` again. A dialog means answer it (see Dialogs). No dialog, and
+   the input box holds the text you sent: it is sitting unsubmitted, so
+   resubmit it (e.g. a bare Enter), wait briefly, confirm `status` now reads
+   `working`. Text in the input box that you did not send is usually the
+   agent's own greyed-out prompt suggestion, not typed input, and a plain-text
+   `read` cannot tell them apart. Read the pane with styling preserved (see
+   Dispatch). Dim text means the box is empty: do not press Enter on it and do
+   not spend a step clearing it. Still not `working`: the dispatch failed —
+   `read` the transcript, fix the cause (crashed agent, API error, wrong
+   working directory), and re-dispatch from the top. Never assume a dispatch
+   took.
+
+Then follow the core skill's dispatch ritual.
 
 ## Dispatch
 
