@@ -5,7 +5,7 @@ description: >-
   HERDR_OVERSEER=1 under Herdr — see resources/ for other harnesses)
   and the task involves implementation work (features, code changes,
   bugfixes, anything needing tests). Requires a top-tier model (e.g.,
-  Fable), an OVERSEER_IMPLEMENTER command, and a multi-agent harness
+  Fable), an implementer roster entry, and a multi-agent harness
   driver. Not for trivial mechanical edits (typos, doc tweaks, version
   bumps) or read-only questions.
 ---
@@ -23,8 +23,9 @@ Agents communicate through files, never through you as a message bus.
 This skill's mechanics are written against a small abstract interface,
 not a specific tool:
 
-- `spawn(role, command)` -> handle — launch an agent; capture its
-  actual model from its own banner/output, not the command you typed
+- `spawn(role, entry)` -> handle — launch an agent from its roster
+  entry; confirm its actual model the way your driver documents, not
+  from the entry you passed
 - `status(handle)` -> `working` | `idle` | `blocked` | `error`
 - `read(handle, lines)` -> recent output, bounded — never full history
 - `prompt(handle, text, wait?, timeout?)` — send input, optionally
@@ -59,50 +60,35 @@ under an approximated one, lean on `read` more than `status` and treat
 
 Verify overseer mode is actually enabled before orchestrating anything
 — your driver states the exact signal to check (Herdr's is in
-`resources/herdr.md`). Then confirm the roster:
+`resources/herdr.md`). Then load the roster the way your driver
+documents. A roster has up to three entries:
 
-```bash
-printf '%s\n' "${OVERSEER_IMPLEMENTER:?not set}" "${OVERSEER_REVIEWER:-none}" "${OVERSEER_JUDGE:-none}"
-```
+- implementer — launches an implementer agent. Required.
+- reviewer — launches the reviewer, verifier, and plan-critic agents.
+  Missing means none of those roles exist; skip them and say so.
+- judge — optional command (normally `overseer-judge`) that returns
+  typed verdicts on pane state, task files, and review rounds. Missing
+  means no judge, and every step below applies as written. Present:
+  read `resources/judge.md` before the first dispatch and record the
+  judge in the `STATE.md` roster. It is advisory, it fails open, and
+  it sends content to a third-party API.
 
-- `OVERSEER_IMPLEMENTER` — command that launches an implementer agent.
-- `OVERSEER_REVIEWER` — command that launches the reviewer, verifier,
-  and plan-critic agents. Unset means none of those roles exist; skip
-  them and say so.
-- `OVERSEER_JUDGE` — optional command (normally `overseer-judge`)
-  that returns typed verdicts on pane state, task files, and review
-  rounds. Unset means no judge, and every step below applies as
-  written. Set: read `resources/judge.md` before the first dispatch
-  and record the judge in the `STATE.md` roster. It is advisory, it
-  fails open, and it sends content to a third-party API.
+An entry is what your driver defines: a full shell command on a
+terminal harness, a structured target on others. Every entry must pin
+its own model — an unpinned entry that defaults to an overseer-tier
+model silently destroys the cost savings. If the implementer entry
+carries no model pin and you do not know its default, confirm with
+the user once before the first spawn. After every `spawn`, confirm
+the agent's resolved model the way your driver documents and record
+it in the `STATE.md` roster. A wrapper or alias can hide the real
+pin, so never trust the entry alone.
 
-Roster commands must pin their own model (e.g.
-`claude --model claude-opus-5`) — an unpinned command that defaults
-to an overseer-tier model silently destroys the cost savings. If the
-implementer command carries no model pin and you do not know its
-default, confirm with the user once before the first spawn. After
-every `spawn`, read the model from the agent's own banner and record
-it in the `STATE.md` roster; a shell alias or wrapper can hide the
-real pin, so never trust the command string alone. If the banner has
-already scrolled off, read the agent's process command line instead
-(your driver documents how). It shows the resolved pin.
-
-The reviewer command should run a different model family from the
+The reviewer entry should run a different model family from the
 overseer and implementers. An independent check exists to remove
 correlated blind spots; same-family review keeps them.
 
-Roster commands are normally literal: the optional `overseer`
-launcher sets them from a profile of full commands (format in
-`resources/profiles.example.toml`). A shorthand that still arrives (a
-kind+model pair, a shell alias, a wrapper function) means the user
-bypassed the launcher. Honor the intent rather than treating it as
-"unset": resolve it through whatever general-purpose launch method
-your driver offers and record the real, resolved command in
-`STATE.md`.
-
-If `OVERSEER_IMPLEMENTER` is unset, say so and work solo. Use your
-harness driver for all agent-launch and session mechanics; do not
-improvise syntax.
+No implementer entry: say so and work solo. Use your harness driver
+for all agent-launch and session mechanics; do not improvise syntax.
 
 **On resume** (session restart, compaction recovery, workspace change,
 or any moment an expected agent is not where `STATE.md` says):
@@ -122,7 +108,7 @@ reviewer is how review lapses for a dozen tasks unnoticed.
 | Reviewer | Reads diffs against the task spec, writes per-item findings to review files; before Gate 1, critiques the plan | Edits code |
 | Verifier | Executes the task's acceptance and smoke commands in a fresh session that has seen only the criteria and the diff | Reads the implementer transcript; edits code |
 
-Reviewer, verifier, and plan critic all spawn from `OVERSEER_REVIEWER`.
+Reviewer, verifier, and plan critic all spawn from the reviewer entry.
 The reviewer reads; the verifier executes. They are different sessions
 with different briefs, never the same session.
 
@@ -316,7 +302,7 @@ item as unanswered.
    enough for a less capable model. No ambiguity — implementers execute
    specs, they do not interpret intent. Write the task files now.
 2. **Plan critic** (if reviewer configured). Spawn from
-   `OVERSEER_REVIEWER`; brief: read `PLAN.md` and `tasks/`, write
+   the reviewer entry; brief: read `PLAN.md` and `tasks/`, write
    `review/plan.md` listing contradictions between plan and tasks,
    acceptance criteria that could be read two ways, allowlist overlap,
    and criteria that cannot fail. Fix the spec, then retire it. With
@@ -337,7 +323,7 @@ item as unanswered.
    passed, when gated in): set `Status: accepted`, update `STATE.md`,
    retire the implementer session. Otherwise the task goes back to
    the implementer with the captured output as the defect report.
-6. **Verifier** (when gated in). Spawn from `OVERSEER_REVIEWER` in a
+6. **Verifier** (when gated in). Spawn from the reviewer entry in a
    fresh session; brief: the task file path and the diff, nothing
    else. It runs `Acceptance` and `Smoke`, writes pass/fail with
    output under `Verification`, and retires. A fail goes back to the
@@ -358,31 +344,15 @@ and recovery, not an absence of failed HTTP requests.
 
 ## Dispatch ritual
 
-Startup dialogs (folder trust, update prompts, imports) and composer
-races eat first prompts on most harnesses. For each dispatch:
+Follow your driver's dispatch ritual: how to confirm the agent is
+ready, how to deliver the task, and how to confirm the task took.
+Never assume a dispatch took. Then, for every dispatch:
 
-1. `read` the target's recent output first — is a dialog sitting at
-   the prompt?
-2. `prompt` the task-ready nudge, waiting for idle with a generous
-   timeout.
-3. If the wait reports the prompt as stalled, or returns with the
-   agent still `idle`: `read` again. A dialog means answer it (your
-   driver documents its dialogs). No dialog, and the input box holds
-   the text you sent: it is sitting unsubmitted, so resubmit it (e.g.
-   a bare Enter), wait briefly, confirm `status` now reads `working`.
-   Text in the input box that you did not send is usually the agent's
-   own greyed-out prompt suggestion, not typed input, and a plain-text
-   `read` cannot tell them apart. Read the pane with styling preserved
-   (your driver documents how). Dim text means the box is empty: do
-   not press Enter on it and do not spend a step clearing it. Still
-   not `working`: the dispatch failed — `read` the transcript, fix the
-   cause (crashed agent, API error, wrong working directory), and
-   re-dispatch from the top. Never assume a dispatch took.
-4. After any wait returns, check the artifact before the status: task
+1. After any wait returns, check the artifact before the status: task
    file `Status`/`Result`, then `git log -1`. A `done` status with an
    untouched task file is not completion (rate-limit backoff and API
    errors both produce it).
-5. A wait that times out, or returns without artifact progress: ask
+2. A wait that times out, or returns without artifact progress: ask
    your driver for whatever diagnostic it offers, then read the
    transcript. Find the cause before re-dispatching; a re-prompt on
    top of an unread error repeats it.
