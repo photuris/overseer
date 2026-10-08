@@ -244,7 +244,11 @@ Vitest counts name files, not directories, unless the directory
 count was checked with `ls`. An overseer-owned smoke script gets a
 dry run of its navigation (login, reach the target screen) against the
 dev stack before dispatch: selectors guessed from code failed on first
-run in runs 050 and 052. A UI test that asserts after an
+run in runs 050 and 052. Before a spec prescribes a test
+assertion or query option, copy the idiom from an existing test in the
+repo: jest-dom matchers (`toHaveAttribute`, `toBeDisabled`) and
+options like `exact` on `getByRole` are often absent or fail typecheck
+(runs phase-17 and nav-2). A UI test that asserts after an
 asynchronous refresh must first wait for something the refresh
 visibly changes; otherwise it asserts on the pre-refresh DOM and
 passes whatever the refresh does (three of five tests that could not
@@ -266,6 +270,19 @@ that pins line endings before fixtures land (seen in multiplexer-driver
 run 2 and overseer-judge run 2). Two tasks
 whose `Allowed` lists overlap are one task mis-partitioned, or they
 run serially.
+
+An overseer-written black-box probe test (copied into the package by
+the task's Acceptance, never editable by the implementer) raises the
+judge's acceptance score and gives the verifier a contract independent
+of the implementer's tests. Its failure mode is the overseer's own
+reading of the behavioral contract: in two consecutive runs a probe
+asserted a value the contract did not support (a row count the
+original emitted twice; path assertions that ignored URL
+normalization), and the implementer was blocked until the probe was
+corrected. Have the plan critic check every probe's expected values
+against the behavioral source, not only its compilation, before Gate 1,
+and treat a probe failure the implementer reports with a reproduction
+from the original as a probe defect first.
 
 A task carrying arbitrary user JSON states its numeric precision contract.
 Check a large integer and a precise decimal through the actual transport
