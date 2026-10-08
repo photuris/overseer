@@ -144,20 +144,58 @@ costs more than the edit.
 ## Filesystem protocol
 
 All inter-agent communication goes through `.overseer/` at the repo
-root. Prompts carry only short nudges pointing at files, e.g.
-"Task ready: .overseer/tasks/003-rate-limit.md. Respond in that file."
+root (the main checkout, `git rev-parse --show-toplevel`). Each run
+owns one folder under `runs/`; nothing outside that folder belongs
+to a single run. Prompts carry only short nudges pointing at files,
+e.g. "Task ready: .overseer/runs/<run-id>/tasks/003-rate-limit.md.
+Respond in that file."
 
 ```
 .overseer/
-  PLAN.md              # the approved plan
-  STATE.md             # run state: roster (role -> agent name, model),
+  active/<run-id>.md   # one lease per live run (below)
+  LESSONS.md           # lessons from every run, append-only
+  runs/<run-id>/
+    PLAN.md            # the approved plan
+    STATE.md           # run state: roster (role -> agent name, model),
                        #   tasks, statuses, last reviewed: <commit>,
-                       #   degradations, open items, LESSONS
-  tasks/NNN-slug.md    # one per task: spec, acceptance, status, result,
+                       #   degradations, open items
+    tasks/NNN-slug.md  # one per task: spec, acceptance, status, result,
                        #   verification output
-  review/plan.md       # plan-critic findings, before Gate 1
-  review/round-N.md    # reviewer findings, per-item
+    review/plan.md     # plan-critic findings, before Gate 1
+    review/round-N.md  # reviewer findings, per-item
 ```
+
+The run id is `<date>-<slug>`, chosen with the user at the start of
+the run; if the folder exists, add a suffix (`-2`). Task numbers
+belong to the run: two runs may both have a task 170, and a task
+reference outside its run names the run id. A run writes only inside
+its own folder and its own lease, and appends to `LESSONS.md`. Never
+move, archive, or edit a file another run created. Two overseers on
+different harnesses once shared one ledger: the second took the first
+run's live `PLAN.md` for a stale one, "archived" it over the real
+archive, and the gitignored copy was lost (bespoke-grc, 2026-10-08).
+A `.overseer/` with `PLAN.md` at its top level is a single-run ledger
+from before this layout: ask the user whether its run is still live,
+then move its contents, unchanged, to `runs/legacy/`.
+
+The lease is a short file you write before any other ledger file and
+delete at the end of Gate 3:
+
+```markdown
+run: 2026-10-08-nav2
+harness: <driver name>
+overseer: <your own handle, as your driver names it>
+started: 2026-10-08T12:40:00-05:00
+claims: preview-18089, merge-main
+```
+
+`claims` names the shared resources this run will change: a preview
+server by port, the branch it merges into, a long-lived dev database.
+`harness` and `overseer` let a driver on the same harness check the
+handle; a handle from another harness is not checkable, and the file
+is the only signal. The lease's age is its modification time. Report
+it; never judge it. A run waiting at a gate for a day is still live,
+and only the user knows whether a week-old lease is dead.
 
 Review findings are individually addressable items with a stable ID
 (`R1-03`), a severity (`blocking` or `minor`), and a status: `open`,
@@ -341,24 +379,31 @@ item as unanswered.
 
 ## Workflow
 
-1. **Recon and plan.** Explore the repo cheaply yourself (this is
+1. **Startup check.** Read every lease in `.overseer/active/`. For
+   each, tell the user the run id, harness, age, and claims; never
+   remove one, stale or not. Then write your own lease. Another lease
+   means a worktree for every implementer, whatever `list()` shows,
+   and a resource another lease claims is touched only with the
+   user's approval. `list()` sees one harness; the lease is how two
+   overseers on different harnesses find each other.
+2. **Recon and plan.** Explore the repo cheaply yourself (this is
    reading, not implementing). Write `PLAN.md`: task breakdown, each
    task with explicit file paths and acceptance criteria concrete
    enough for a less capable model. No ambiguity — implementers execute
    specs, they do not interpret intent. Write the task files now.
-2. **Plan critic** (if reviewer configured). Spawn from
+3. **Plan critic** (if reviewer configured). Spawn from
    the reviewer entry; brief: read `PLAN.md` and `tasks/`, write
    `review/plan.md` listing contradictions between plan and tasks,
    acceptance criteria that could be read two ways, allowlist overlap,
    and criteria that cannot fail. Fix the spec, then retire it. With
    a judge on the roster, lint each task file with it first
    (`resources/judge.md`). The critic then starts from cleaner specs.
-3. **Gate 1: user approves the plan.** Do not spawn implementers
+4. **Gate 1: user approves the plan.** Do not spawn implementers
    before approval. Announce the gate (below).
-4. **Set up your agent layout**, if your harness has one (below),
+5. **Set up your agent layout**, if your harness has one (below),
    launch implementers, assign one task file each using the dispatch
    ritual.
-5. **Wait, verify, iterate.** Wait in bounded intervals with a health
+6. **Wait, verify, iterate.** Wait in bounded intervals with a health
    check between (see "Implementer health watch"). Completion is an
    artifact, not a status: the task file has a `Result` section and
    `git log` shows the task's commit. Then verify it yourself by
@@ -368,15 +413,16 @@ item as unanswered.
    passed, when gated in): set `Status: accepted`, update `STATE.md`,
    retire the implementer session. Otherwise the task goes back to
    the implementer with the captured output as the defect report.
-6. **Verifier** (when gated in). Spawn from the reviewer entry in a
+7. **Verifier** (when gated in). Spawn from the reviewer entry in a
    fresh session; brief: the task file path and the diff, nothing
    else. It runs `Acceptance` and `Smoke`, writes pass/fail with
    output under `Verification`, and retires. A fail goes back to the
    implementer as a spec-referenced defect.
-7. **Review rounds** (if reviewer enabled), per the loop below.
-8. **Gate 3: final acceptance.** Check the whole product against
-   `PLAN.md`, run the full suite, write `LESSONS` in `STATE.md`,
-   report to the user with evidence. Announce the gate (below).
+8. **Review rounds** (if reviewer enabled), per the loop below.
+9. **Gate 3: final acceptance.** Check the whole product against
+   `PLAN.md`, run the full suite, append this run's `LESSONS` to
+   `.overseer/LESSONS.md`, delete your lease, and report to the user
+   with evidence. Announce the gate (below).
 
 ## Verification evidence
 
@@ -415,8 +461,14 @@ only when `list()` shows no other live session working in that repo.
 Another live session in the repo, or three or more concurrent
 implementers, means one worktree per agent, and you own the merge.
 Never switch branches in a shared checkout without that `list()`
-check. Parallelism follows from independent task boundaries in the
-plan, never from available session slots.
+check. Another run's lease in `.overseer/active/` is another live
+session whatever `list()` shows, so it forces worktrees too. While
+one exists, push only your own commits (`git push origin
+<sha>:<branch>`, never the branch): a branch push publishes the other
+run's unpushed work. If its commits sit below yours on the branch, a
+sha push publishes them anyway; ask the user first. Parallelism
+follows from independent task boundaries in the plan, never from
+available session slots.
 
 If your harness has a visual layout (tabs, panes, windows), arrange
 agents so the reviewer never shares space with an implementer and you
@@ -538,11 +590,13 @@ routine progress trains the user to ignore it.
 
 ## Lessons
 
-At Gate 3, write a `LESSONS` section in `STATE.md`: what cost the most
+At Gate 3, append a `LESSONS` section for this run to
+`.overseer/LESSONS.md` (`>>`, never a rewrite): what cost the most
 this run, which spec defects caused review rounds, any tooling quirk.
-Then check the previous run's `LESSONS` (or your own longer-term notes,
-if you keep them). A friction that appears in two runs is promoted
-into this skill in the same session, not into another memory note.
+Then check the previous run's section, directly above yours (or your
+own longer-term notes, if you keep them). A friction that appears in
+two runs is promoted into this skill in the same session, not into
+another memory note.
 Four memory notes recorded the swallowed-Enter bug before this skill
 absorbed it; that is the loop this section closes.
 
@@ -582,3 +636,7 @@ absorbed it; that is the loop this section closes.
 - Resuming a session without checking the roster in `STATE.md`
   against `list()`.
 - Switching branches in a shared checkout without a `list()` check.
+- Writing any ledger file before your lease, or moving, archiving,
+  or editing a ledger file another run created.
+- Restarting a server, pushing a branch, or resetting a database that
+  another live lease claims, without the user's approval.
