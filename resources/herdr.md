@@ -232,7 +232,7 @@ Then follow the core skill's dispatch ritual.
 
 ```bash
 multiplexer-driver --harness herdr pane read <handle> --lines 20
-multiplexer-driver --harness herdr pane prompt <handle> --text "Task ready: .overseer/tasks/003-rate-limit.md. Respond in that file."
+multiplexer-driver --harness herdr pane prompt <handle> --text "Task ready: .overseer/runs/<run-id>/tasks/003-rate-limit.md. Respond in that file."
 ```
 
 `read` returns plain text by default. To tell an agent's greyed-out
@@ -303,9 +303,12 @@ multiplexer-driver --harness herdr pane list \
 Each record is one pane with its agent, status, and working
 directory, so this prints every other live agent working in the repo.
 Given disjoint tasks, two implementers may share the main checkout
-only when this prints nothing (or only your own implementers).
-Another live session in the repo, or three or more concurrent
-implementers, means one Herdr worktree each, and you own the merge.
+only when this prints nothing (or only your own implementers) and
+`.overseer/active/` holds no lease but yours. `pane list` sees only
+Herdr; an overseer in T3 Code or tmux shows up only as a lease.
+Another live session in the repo, another lease, or three or more
+concurrent implementers, means one Herdr worktree each, and you own
+the merge.
 
 Create each worktree from your own workspace, never from a path:
 
@@ -343,7 +346,7 @@ A worktree implementer's nudge names the task file by absolute path
 (`resources/t3.md` "Ledger paths" does the same for T3):
 
 ```
-Task ready: /abs/main/checkout/.overseer/tasks/003-rate-limit.md.
+Task ready: /abs/main/checkout/.overseer/runs/<run-id>/tasks/003-rate-limit.md.
 Respond in that file.
 ```
 

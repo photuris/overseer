@@ -71,7 +71,7 @@ Three limits:
 ## 2. Task files (before the plan critic and Gate 1)
 
 ```bash
-$OVERSEER_JUDGE task .overseer/tasks/003-rate-limit.md
+$OVERSEER_JUDGE task .overseer/runs/<run-id>/tasks/003-rate-limit.md
 ```
 
 It parses only the task-file template in the skill. Act like this:
@@ -95,7 +95,7 @@ one file at a time and cannot see contradictions between files.
 ## 3. Review rounds (after the implementer responds)
 
 ```bash
-$OVERSEER_JUDGE review .overseer/review/round-2.md
+$OVERSEER_JUDGE review .overseer/runs/<run-id>/review/round-2.md
 ```
 
 It parses only the Review file layout in the skill, and prints one
@@ -164,11 +164,11 @@ worth more than any test. When the judge errors, or its verdict
 differs from your own read, save both and note it in `STATE.md`:
 
 ```bash
-mkdir -p .overseer/judge
+mkdir -p .overseer/runs/<run-id>/judge
 multiplexer-driver --harness <harness> pane read <handle> --lines 60 --ansi \
-  | jq -r .output > .overseer/judge/003-impl-idle-vs-working.ansi
-$OVERSEER_JUDGE session --input .overseer/judge/003-impl-idle-vs-working.ansi \
-  --agent <kind> > .overseer/judge/003-impl-idle-vs-working.json
+  | jq -r .output > .overseer/runs/<run-id>/judge/003-impl-idle-vs-working.ansi
+$OVERSEER_JUDGE session --input .overseer/runs/<run-id>/judge/003-impl-idle-vs-working.ansi \
+  --agent <kind> > .overseer/runs/<run-id>/judge/003-impl-idle-vs-working.json
 ```
 
 Name the file for what you saw against what it said. Also save the

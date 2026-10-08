@@ -168,7 +168,7 @@ Then follow the core skill's dispatch ritual.
 ## Dispatch
 
 ```bash
-multiplexer-driver --harness tmux pane prompt %3 --text "Task ready: .overseer/tasks/003-rate-limit.md. Respond in that file."
+multiplexer-driver --harness tmux pane prompt %3 --text "Task ready: .overseer/runs/<run-id>/tasks/003-rate-limit.md. Respond in that file."
 ```
 
 `prompt` only sends and submits — it does not wait. With patterns
@@ -233,6 +233,10 @@ in the core skill):
 multiplexer-driver --harness tmux pane list \
   | jq -c --arg repo "$PWD" 'select(.cwd != null and (.cwd | startswith($repo)) and .handle != env.TMUX_PANE) | {handle, label, agent, cwd}'
 ```
+
+This sees one tmux server. An overseer in another harness shows up
+only as a lease in `.overseer/active/`; read that too before two
+implementers share the main checkout.
 
 ## Interrupt
 
