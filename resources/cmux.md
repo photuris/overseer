@@ -47,20 +47,35 @@ own error text inside `message`. Branch on the exit code: `2` usage,
 unsupported on cmux (`pane read --ansi`, `workspace tag`), `6` started
 false (below), `7` wait timed out.
 
-`spawn` and `split` have one more outcome. When the surface was
-created but the agent did not finish starting, they exit `6` and still
-print the handle:
+`spawn` and `split` have one more outcome. The driver never checks
+that the agent finished starting. It exits `6` and still prints the
+handle when the workspace or surface exists but a later setup step
+failed: for `spawn` the `rename-tab`; for `split` the paste of the
+command line or the `rename-tab`:
 
 ```json
 {"handle":"9368A7E3-DCC1-4510-8DD6-DB8A819770F8","started":false}
 ```
 
-Success prints `"started":true`. No stdout at all means nothing was
-created. A `started:false` surface is yours to deal with: `read` it
-first. A startup dialog (folder trust) is the usual cause, so answer
-it (see Dialogs) and carry on. If the command simply exited or never
-came up, close the surface with `pane kill`. Never retry a `spawn`
-without doing one or the other, or the workspaces pile up.
+Success prints `"started":true`. A `started:false` surface is live:
+read the stderr error to see which step failed, `read` the surface,
+then repair it by hand or kill it. Rename it with `pane rename
+<handle> --label <name>`. If the command line never reached the
+shell, send it with `pane prompt <handle> --text "<command line>"`.
+Otherwise close the surface with `pane kill <handle>`. A dialog never
+causes exit `6` here; dialogs show up on `read` after a
+`started:true` (see Dialogs).
+
+A nonzero exit with no stdout can still have created a workspace:
+cmux's `new-workspace` may have succeeded while the follow-up `tree`
+lookup failed, leaving no handle to print. Before any retry, list the
+workspaces. If one titled `<name>` exists, close it, or the
+workspaces pile up:
+
+```bash
+multiplexer-driver --harness cmux workspace list
+multiplexer-driver --harness cmux workspace close <workspace_id>
+```
 
 ## Handles
 
@@ -180,10 +195,10 @@ How the match works, since each point has caused a wrong pattern:
   dispatch text fires before the agent runs. Match the agent's prompt
   or a marker that only its output can produce.
 
-Every response carries `confidence`: `native` or `heuristic`, never
-both in one answer. Under a heuristic status, lean on `read` more than
-`status`, and treat "unchanged output across two reads" as the
-strongest signal you get.
+Every response carries `confidence`: `native`, `heuristic`, or `none`
+(unknown status, no patterns), never two in one answer. Under a
+heuristic status, lean on `read` more than `status`, and treat
+"unchanged output across two reads" as the strongest signal you get.
 
 ## Dispatch ritual
 
