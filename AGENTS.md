@@ -12,10 +12,10 @@ directly.
   `notify`/`layout`). Harness-agnostic; do not add harness-specific
   commands here.
 - `resources/<harness>.md` — one file per harness, mapping the
-  abstract interface onto that harness's real commands. `tmux.md` and
-  `herdr.md` point at the [multiplexer-driver][driver] CLI, which
-  implements the mapping deterministically instead of leaving it to
-  LLM prose. `judge.md` documents the optional judge role, backed by
+  abstract interface onto that harness's real commands. `tmux.md`,
+  `herdr.md`, and `cmux.md` point at the [multiplexer-driver][driver]
+  CLI, which implements the mapping deterministically instead of
+  leaving it to LLM prose. `judge.md` documents the optional judge role, backed by
   [overseer-judge][judge].
 - `resources/t3.md` — the T3 Code driver. Unlike `tmux.md` and
   `herdr.md`, it uses no CLI: the overseer runs as a T3 thread and
