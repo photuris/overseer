@@ -371,21 +371,22 @@ the same handle exits `4`.
 ## Isolation
 
 ```bash
-multiplexer-driver --harness tuios pane list \
-  | jq -c --arg repo "$PWD" 'select(.agent != null and .cwd != null and (.cwd | startswith($repo)) and .handle != env.TUIOS_WINDOW_ID) | {handle, workspace_label, agent, status, cwd}'
+tuios list-agents --all-sessions --json \
+  | jq -c --arg repo "$PWD" '.agents[] | select((.cwd // "") | startswith($repo)) | select(.window_id != env.TUIOS_WINDOW_ID) | {session, window_id, name, harness_id, state, cwd}'
 ```
 
-This finds every window tuios has identified as an agent (by hooks or
-by the process detector), with its status and working directory; it
-covers the session `pane list` reaches (see Session and daemon). A
-window nothing has identified lists with `agent` null, whether it is a
-plain shell or an agent the detector missed, so run a second,
-conservative check. List every other such window, then `read` each
-one:
+This finds every window in every session of this daemon that tuios has
+identified as an agent (by hooks or by the process detector), with its
+state and working directory. `pane list` reaches only one session (see
+Session and daemon), so do not use it for this check. A window nothing
+has identified is not listed, whether it is a plain shell or an agent
+the detector missed, so run a second, conservative check. List every
+other such window in every session, then `read` each one with its own
+session:
 
 ```bash
-multiplexer-driver --harness tuios pane list | jq -r 'select(.agent == null and .handle != env.TUIOS_WINDOW_ID) | .handle'
-multiplexer-driver --harness tuios pane read <handle> --lines 10
+tuios list-agents --all-sessions --all --json | jq -r '.agents[] | select((.harness_id // "") == "") | select(.window_id != env.TUIOS_WINDOW_ID) | "\(.session) \(.window_id)"'
+multiplexer-driver --harness tuios --session <session> pane read <handle> --lines 10
 ```
 
 Output that shows an agent's input box or banner (Claude Code's `❯`
@@ -398,11 +399,13 @@ session.
 Given disjoint tasks, two implementers may share the main checkout
 only when the first filter prints nothing (or only your own
 implementers), the second check finds no live agent, and
-`.overseer/active/` holds no lease but yours. `pane list` sees only
-this tuios session; an overseer in T3 Code, Herdr, or tmux shows up
-only as a lease. Another live session in the repo, another lease, or
-three or more concurrent implementers, means one worktree each, and
-you own the merge.
+`.overseer/active/` holds no lease but yours. Both checks cover every
+session of this tuios daemon. A standalone agent in another session
+has no lease, so the checks are the only way to see it; an overseer in
+T3 Code, Herdr, or tmux, or a daemon with another `XDG_RUNTIME_DIR`,
+shows up only as a lease, if at all. Another live session in the
+repo, another lease, or three or more concurrent implementers, means
+one worktree each, and you own the merge.
 
 Create each worktree with plain git, then spawn the implementer in it.
 Do not use `tuios worktree`; it is out of scope for this driver.
