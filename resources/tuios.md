@@ -160,20 +160,45 @@ mapping is:
 | `needs_input`, `errored` | `blocked` | `native` |
 | `none`, `unknown` | heuristic with `--patterns`, else `unknown` | `heuristic` or `none` |
 
-A pane gets a state from the agent's own hooks, which the user wires
-once per machine with `tuios integration install <harness>` (Claude
-Code, Codex, and others; `tuios doctor agents` checks it). Never run
-`integration install` yourself: it edits the user's agent
-configuration. If a Claude Code or Codex pane reads `unknown` with
-confidence `none` and you expected a state, tell the user the hooks
-are missing, and use `--patterns` meanwhile.
+A pane gets a state from two sources, and `native` covers both:
+
+- The agent's own hooks, which the user wires once per machine with
+  `tuios integration install <harness>` (Claude Code, Codex, and
+  others; `tuios doctor agents` checks it). A hook reports a prompt or
+  tool call as `working`, an approval request as `needs_input`, and
+  the end of a turn as `done`.
+- tuios's process detector, which needs no hooks. It recognizes known
+  agent CLIs by the window's foreground process (and by screen and
+  title rules) and publishes `working` with source `detect`. The
+  driver reports that as `working` with confidence `native` and lists
+  the agent kind, so `native` does not mean the agent's hooks spoke.
+  Detection never says `needs_input`, and it cannot see an agent in a
+  container or a VM. It shows that a process exists, not that it
+  accepted a dispatch: a detected agent can read `working`
+  while a dialog or an unsubmitted prompt sits in its input row. Keep
+  the prompt-took check of the dispatch ritual (the artifact, or a
+  changed `read`).
+
+To see what the detector made of a window:
+
+```bash
+tuios explain-agent-detect -s "$TUIOS_SESSION" -w <handle> --json | jq -c '{matched, harness_id, matched_rule, evidence}'
+```
+
+Never run `integration install` yourself: it edits the user's agent
+configuration. `unknown` with confidence `none` does not tell you why:
+the agent may be absent, undetected (a container, a launcher the
+detector does not know), or reporting nothing. If a Claude Code or
+Codex pane reads `unknown` and you expected a state, `read` it, check
+`tuios doctor agents`, and tell the user what is missing. Use
+`--patterns` meanwhile.
 
 `blocked` covers two states. `needs_input` means the agent waits on a
 prompt or an approval, and `errored` means its last turn failed. So
 `blocked` on tuios means "read the pane", not "a dialog is up".
 
-A pane without a state, or one whose hooks are not installed, has no
-agent state. Then `status` is `unknown` with confidence `none`, and
+A pane that neither hooks nor the detector report on has no agent
+state. Then `status` is `unknown` with confidence `none`, and
 `pane wait` refuses to run. Pass `--patterns`, written from one real
 `read` and never guessed:
 
@@ -313,8 +338,9 @@ tuios send-keys -s "$TUIOS_SESSION" -w <handle> Enter
 A misspelled key (`Dwon`) is refused and nothing is sent. `read` once
 more after the keys to confirm the dialog is gone.
 
-A trust dialog appears before the agent's hooks run, so `pane status`
-may not read `blocked` for it. After every spawn, `read` once before
+A trust dialog appears before the agent's hooks run, and the detector
+never reports `needs_input`, so `pane status` may read `working` or
+`unknown` for it, not `blocked`. After every spawn, `read` once before
 the first prompt.
 
 ## Retiring a Claude session
@@ -349,11 +375,13 @@ multiplexer-driver --harness tuios pane list \
   | jq -c --arg repo "$PWD" 'select(.agent != null and .cwd != null and (.cwd | startswith($repo)) and .handle != env.TUIOS_WINDOW_ID) | {handle, workspace_label, agent, status, cwd}'
 ```
 
-This finds every window that reports an agent, with its status and
-working directory; it covers the session `pane list` reaches (see
-Session and daemon). A window with no hooks lists as a plain shell
-(`agent` null), so run a second, conservative check. List every other
-shell window, then `read` each one:
+This finds every window tuios has identified as an agent (by hooks or
+by the process detector), with its status and working directory; it
+covers the session `pane list` reaches (see Session and daemon). A
+window nothing has identified lists with `agent` null, whether it is a
+plain shell or an agent the detector missed, so run a second,
+conservative check. List every other such window, then `read` each
+one:
 
 ```bash
 multiplexer-driver --harness tuios pane list | jq -r 'select(.agent == null and .handle != env.TUIOS_WINDOW_ID) | .handle'
