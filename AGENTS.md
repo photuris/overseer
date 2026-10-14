@@ -13,7 +13,7 @@ directly.
   commands here.
 - `resources/<harness>.md` — one file per harness, mapping the
   abstract interface onto that harness's real commands. `tmux.md`,
-  `herdr.md`, and `cmux.md` point at the [multiplexer-driver][driver]
+  `herdr.md`, `cmux.md`, and `tuios.md` point at the [multiplexer-driver][driver]
   CLI, which implements the mapping deterministically instead of
   leaving it to LLM prose. `judge.md` documents the optional judge role, backed by
   [overseer-judge][judge].
