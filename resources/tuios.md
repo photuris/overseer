@@ -160,24 +160,29 @@ mapping is:
 | `needs_input`, `errored` | `blocked` | `native` |
 | `none`, `unknown` | heuristic with `--patterns`, else `unknown` | `heuristic` or `none` |
 
-A pane gets a state from two sources, and `native` covers both:
+A pane gets a state from three sources, and `native` covers all of
+them:
 
 - The agent's own hooks, which the user wires once per machine with
   `tuios integration install <harness>` (Claude Code, Codex, and
   others; `tuios doctor agents` checks it). A hook reports a prompt or
   tool call as `working`, an approval request as `needs_input`, and
   the end of a turn as `done`.
-- tuios's process detector, which needs no hooks. It recognizes known
-  agent CLIs by the window's foreground process (and by screen and
-  title rules) and publishes `working` with source `detect`. The
-  driver reports that as `working` with confidence `native` and lists
-  the agent kind, so `native` does not mean the agent's hooks spoke.
-  Detection never says `needs_input`, and it cannot see an agent in a
-  container or a VM. It shows that a process exists, not that it
-  accepted a dispatch: a detected agent can read `working`
-  while a dialog or an unsubmitted prompt sits in its input row. Keep
-  the prompt-took check of the dispatch ritual (the artifact, or a
-  changed `read`).
+- tuios's process detector (source `detect`), which needs no hooks.
+  It recognizes known agent CLIs by the window's foreground process
+  and publishes `working`. The driver reports that as `working` with
+  confidence `native` and lists the agent kind, so `native` does not
+  mean the agent's hooks spoke. It cannot see an agent in a container
+  or a VM. It shows that a process exists, not that it accepted a
+  dispatch: a detected agent can read `working` while a dialog or an
+  unsubmitted prompt sits in its input row. Keep the prompt-took check
+  of the dispatch ritual (the artifact, or a changed `read`).
+- tuios's screen and title rules (source `screen`), which also need no
+  hooks. They read the window's screen tail and can classify an
+  approval menu as `needs_input`, which the driver reports as
+  `blocked` with confidence `native`. A screen rule is a guess: it can
+  miss a prompt, and a pane can read `working` or `unknown` with a
+  dialog up. `read` the pane before every dispatch regardless.
 
 To see what the detector made of a window:
 
@@ -338,10 +343,10 @@ tuios send-keys -s "$TUIOS_SESSION" -w <handle> Enter
 A misspelled key (`Dwon`) is refused and nothing is sent. `read` once
 more after the keys to confirm the dialog is gone.
 
-A trust dialog appears before the agent's hooks run, and the detector
-never reports `needs_input`, so `pane status` may read `working` or
-`unknown` for it, not `blocked`. After every spawn, `read` once before
-the first prompt.
+A trust dialog appears before the agent's hooks run, so only a screen
+rule can mark it, and a screen rule can miss it: `pane status` may
+read `working` or `unknown` for it. After every spawn, `read` once
+before the first prompt.
 
 ## Retiring a Claude session
 
@@ -376,7 +381,8 @@ tuios list-agents --all-sessions --json \
 ```
 
 This finds every window in every session of this daemon that tuios has
-identified as an agent (by hooks or by the process detector), with its
+identified as an agent (by hooks, process detection, or screen
+rules), with its
 state and working directory. `pane list` reaches only one session (see
 Session and daemon), so do not use it for this check. A window nothing
 has identified is not listed, whether it is a plain shell or an agent
