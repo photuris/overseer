@@ -177,12 +177,14 @@ them:
   dispatch: a detected agent can read `working` while a dialog or an
   unsubmitted prompt sits in its input row. Keep the prompt-took check
   of the dispatch ritual (the artifact, or a changed `read`).
-- tuios's screen and title rules (source `screen`), which also need no
-  hooks. They read the window's screen tail and can classify an
-  approval menu as `needs_input`, which the driver reports as
-  `blocked` with confidence `native`. A screen rule is a guess: it can
-  miss a prompt, and a pane can read `working` or `unknown` with a
-  dialog up. `read` the pane before every dispatch regardless.
+- tuios's screen rules (source `screen`), which also need no hooks.
+  They read the window's screen tail and can classify an approval menu
+  as `needs_input`, which the driver reports as `blocked` with
+  confidence `native`. Its title rules (source `osc`) read the window
+  title instead and can report `working`. A screen or title rule is a
+  guess: it can miss a prompt, and a pane can read `working` or
+  `unknown` with a dialog up. `read` the pane before every dispatch
+  regardless.
 
 To see what the detector made of a window:
 
