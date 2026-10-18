@@ -239,6 +239,8 @@ Expect: integer <= 100
 40 turns. Stop and write Result if exceeded.
 ## Rules
 Commit before writing Result. No stubs, placeholders, or TODO bodies.
+The Result section of this task file is always writable, even when the
+spec marks `.overseer/` read-only.
 Do not edit or skip tests to make Acceptance pass; report instead.
 Search the repo before assuming something is missing.
 For every new test, name in Result the one-line change to the code
@@ -295,7 +297,13 @@ stale-read notice, a gate) lists its transitions as a table
 ("state, event, next state"), including a second failure while
 already in the failure state, recovery, a remount, a second form
 opening over a dirty one, and an edit made while a save is in flight
-(runs 052 and fix-1 paid review rounds for missing rows). A test that
+(runs 052 and fix-1 paid review rounds for missing rows). A task that
+acts later on something observed earlier (a queued notification, a
+deferred click, a pending confirmation, a timer) re-reads its target from
+the source of truth when it acts, and the spec names the identity checks
+for that moment (which device or account owns it, and a stable key rather
+than a reusable slot); keep that decision in code that takes the clock as
+an argument (two Hedgerow runs paid review and critic rounds for this). A test that
 creates a privileged resource (a database role, an admin connection, a
 credential) registers its cleanup before it creates anything (run fix-1
 left 14 roles with a known password on a local Postgres). A
