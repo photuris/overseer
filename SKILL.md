@@ -408,7 +408,12 @@ item as unanswered.
    row) and for one value that is two things at once (an address that
    is both an identity and an alias, in one account and across two):
    those were the critic's best catches in two consecutive runs
-   (mail-app unified, mail-app masked). Fix the spec, then retire it. With
+   (mail-app unified, mail-app masked). Also ask the critic to recompute
+   every expected value and event sequence the task files prescribe,
+   working from the rule as written rather than checking that the
+   tests compile. In two consecutive runs (mail-app masked, mail-app
+   replyto), one of the overseer's hand-derived expectations was
+   wrong. Fix the spec, then retire it. With
    a judge on the roster, lint each task file with it first
    (`resources/judge.md`). The critic then starts from cleaner specs.
 4. **Gate 1: user approves the plan.** Do not spawn implementers
