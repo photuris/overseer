@@ -403,7 +403,12 @@ item as unanswered.
    the reviewer entry; brief: read `PLAN.md` and `tasks/`, write
    `review/plan.md` listing contradictions between plan and tasks,
    acceptance criteria that could be read two ways, allowlist overlap,
-   and criteria that cannot fail. Fix the spec, then retire it. With
+   and criteria that cannot fail. Also ask for the degenerate
+   cardinalities (0, 1 and 2 of every account, identity, member or
+   row) and for one value that is two things at once (an address that
+   is both an identity and an alias, in one account and across two):
+   those were the critic's best catches in two consecutive runs
+   (posto unified, posto masked). Fix the spec, then retire it. With
    a judge on the roster, lint each task file with it first
    (`resources/judge.md`). The critic then starts from cleaner specs.
 4. **Gate 1: user approves the plan.** Do not spawn implementers
