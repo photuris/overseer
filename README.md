@@ -19,7 +19,7 @@ that interface onto real commands.
 | Herdr | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
 | cmux (macOS) | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
 | tuios | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| T3 Code (0.0.46+) | T3 orchestrator MCP tools ([`resources/t3.md`](resources/t3.md)) |
+| T3 Code (0.1.1+) | T3 orchestrator MCP tools ([`resources/t3.md`](resources/t3.md)) |
 
 `multiplexer-driver` is a small CLI that implements the deterministic
 half of the mapping (the actual commands), so the skill itself only
