@@ -248,6 +248,11 @@ under test that makes it fail, and say that you ran it. The change
 must alter the behavior the test claims to cover. The test must then
 fail on its own assertion, not on a build, import, or setup error.
 The unmutated test must pass.
+Before every test run that follows a mutation or its revert, delete the
+language's bytecode cache (Python: `find . -name __pycache__ -type d
+-prune -exec rm -rf {} +`): a same-size edit reverted within the same
+second leaves a cache the runtime trusts, and the suite then runs the
+mutated code (two consecutive runs, 2026-10).
 ## Result            (implementer writes)
 ## Verification      (overseer or verifier writes: captured output)
 ```
@@ -316,6 +321,10 @@ that pins line endings before fixtures land (seen in multiplexer-driver
 run 2 and overseer-judge run 2). Two tasks
 whose `Allowed` lists overlap are one task mis-partitioned, or they
 run serially.
+Before the critic sees a spec, for every new function it names, state
+the empty input, the whitespace-only input, and the duplicated input
+and what each yields: in two consecutive runs (0.8.3
+and 0.8.4) every blocking critic finding was one of these left unsaid.
 
 An overseer-written black-box probe test (copied into the package by
 the task's Acceptance, never editable by the implementer) raises the

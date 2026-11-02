@@ -341,6 +341,15 @@ symlink cost manual prompt answers in two runs).
   say) before the implementer starts.
 - For a non-Claude implementer, use that tool's own equivalent and
   confirm one ledger write works before the first dispatch.
+- A wrapper around a known agent (`claude-work`, which sets
+  `CLAUDE_CONFIG_DIR` and execs `claude`) must not be started with
+  `herdr agent start --kind claude`: that launches bare `claude` with
+  the wrong config directory. Start it as a raw command in the
+  worktree's root pane, `herdr pane run <pane> "claude-work --model
+  claude-opus-5-5 --add-dir <main>/.overseer"`, then poll `pane
+  status` until it reads `idle`; detection takes a few seconds. This
+  carried 15 worktree implementers across two runs
+  (2026-10-04 and 2026-10-28).
 
 A worktree implementer's nudge names the task file by absolute path
 (`resources/t3.md` "Ledger paths" does the same for T3):
