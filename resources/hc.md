@@ -53,7 +53,7 @@ whatever `HERDR_ENV` says.
 | rename | `multiplexer-driver --harness hc pane rename <handle> --label <label>` |
 | interrupt | `multiplexer-driver --harness hc pane interrupt <handle>` (Ctrl-C) or `pane kill <handle>` (hard stop) |
 | kill | `multiplexer-driver --harness hc pane kill <handle>` (ends the program and removes the terminal) |
-| notify | `multiplexer-driver notify --message "..." [--title "..."]` — no `herdr-app` notification command exists; the driver uses `notify-send` on Linux, `osascript` on macOS, and on Windows sends nothing; `--sound` has no effect; check `sent` in the reply |
+| notify | `multiplexer-driver notify --message "..." [--title "..."]` — no `herdr-app` notification command exists. The driver tries, in order: the `herdr` CLI when `HERDR_ENV=1` is inherited (the only route that passes `--sound`), cmux when its socket variable is set, then `notify-send` on Linux or `osascript` on macOS; with none available it returns `{"sent":false,"method":"none"}` successfully (the usual case on Windows). Check `sent` in the reply |
 | layout | see Layout |
 
 Every subcommand prints JSON to stdout on success (one object, or JSON
