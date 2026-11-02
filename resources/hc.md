@@ -32,9 +32,12 @@ inside a terminal of a Herdr core at all. `HERDR_OVERSEER=1` means this
 session is the overseer for the current run. Both must be set before
 you orchestrate anything. `overseer <profile>` sets `HERDR_OVERSEER=1`
 itself under hc from overseer-launch 0.2 on; with an older launcher,
-or with no launcher, the user sets it by hand. `HERDR_ENV` is not set
-under the app (hc does not export it), so the TUI's signal never
-matches here.
+or with no launcher, the user sets it by hand. hc does not set
+`HERDR_ENV` itself, but a terminal inherits it from the environment
+the core was started in (seen: a core started with `HERDR_ENV=1`
+gave its terminals `HERDR_ENV=1`). So both signals can be present.
+`HC_TERMINAL_ID` decides the driver: with it set, use this file,
+whatever `HERDR_ENV` says.
 
 ## Primitive mapping
 
@@ -50,7 +53,7 @@ matches here.
 | rename | `multiplexer-driver --harness hc pane rename <handle> --label <label>` |
 | interrupt | `multiplexer-driver --harness hc pane interrupt <handle>` (Ctrl-C) or `pane kill <handle>` (hard stop) |
 | kill | `multiplexer-driver --harness hc pane kill <handle>` (ends the program and removes the terminal) |
-| notify | `multiplexer-driver notify --message "..." [--title "..."]` — falls back to `notify-send`; `herdr-app` has no notification command and `--sound` has no effect |
+| notify | `multiplexer-driver notify --message "..." [--title "..."]` — no `herdr-app` notification command exists; the driver uses `notify-send` on Linux, `osascript` on macOS, and on Windows sends nothing; `--sound` has no effect; check `sent` in the reply |
 | layout | see Layout |
 
 Every subcommand prints JSON to stdout on success (one object, or JSON
@@ -58,10 +61,12 @@ Lines for `pane list`). On failure the exit code is nonzero and the
 last stderr line is `{"error":{"type":…,"message":…}}`, with hc's own
 error kind and message inside `message` (for example
 `name_taken: …`). Branch on the exit code: `1` anything else (a
-`blocked:` refusal, a `spawn_failed:`), `2` usage, `3` hc is not
-installed or a call timed out, `4` no such terminal (also a terminal
-that has finished), `5` unsupported (`pane split`, `pane read --ansi`),
-`7` wait timed out. Exit `6` does not occur on hc.
+`blocked:` refusal, a `spawn_failed:`, a `finished:` error), `2`
+usage, `3` hc is not installed or a call timed out, `4` no such
+terminal (also `pane status` and `pane wait` of a finished one; see
+Finished terminals), `5` unsupported (`pane split`,
+`pane read --ansi`), `7` wait timed out. Exit `6` does not occur on
+hc.
 
 Native status comes from the program's own OSC 7501 reports, which hc
 records. The driver maps them:
@@ -76,13 +81,18 @@ records. The driver maps them:
 Claude Code, Codex, and pi report (per `hc --skill`); a shell does
 not. For a shell or a script, pass `--patterns` written from one real
 `read` (same rules as `resources/tuios.md` "Status"), or treat the
-status as unknown and lean on `read` and the artifact. `pane wait`
+status as unknown and lean on `read` and the artifact. A pattern
+match reads `idle` or `blocked` with confidence `heuristic` (seen:
+`{"idle":["READY_X"]}` on a terminal that printed `READY_X`), and
+`pane wait --patterns` accepts it. `pane wait` without `--patterns`
 exits `2` ("no status signal … pass --patterns") for a terminal that
 has reported nothing. That includes an agent in the first moments
 after `spawn`, before its first report: poll `pane status` until it
-is native before you call `pane wait` (seen on a test reporter).
-`blocked` covers both `blocked` and `error`: `read` the pane. A
-finished terminal has no status; `pane status` exits `4`.
+is native (or give `--patterns`) before you call `pane wait` (seen on
+a test reporter).
+`blocked` covers both reported `blocked` and `error`: `read` the pane
+(see Blocked and error). A finished terminal has no status; see
+Finished terminals.
 
 ## Handles
 
@@ -126,14 +136,20 @@ this driver offers and record the real, resolved command in
 
 After every `spawn`, read the model from the agent's own banner
 (`pane read`) and record it in the `STATE.md` roster. hc has no
-`process-info`. When the banner has scrolled off, the terminal's
-record holds the resolved command line:
+`process-info`. When the banner has scrolled off, `hc get` shows what
+was launched and what runs now:
 
 ```bash
-hc get <handle> --json | jq .argv
+hc get <handle> --json | jq -c '{argv, foreground: .foreground.argv}'
 ```
 
-It prints the argv as a JSON array.
+`argv` is the launch command and does not follow a wrapper or shell
+into the program it starts (seen: `bash -c 'exec sleep 60'` still
+printed `["bash","-c","exec sleep 60"]`). `foreground.argv` is the
+process now in front, or `null` early on. Neither proves the model: a
+wrapper may set it from a config file. If they do not name it, `read`
+the pane again after the agent's next reply, and record the model as
+unconfirmed until you see it.
 
 A Codex roster entry must carry `--no-daemon` (`hc --skill`:
 otherwise its commands run outside hc), for example
@@ -153,9 +169,13 @@ races eat first prompts on most harnesses. For each dispatch:
    the program cannot start (a missing binary), `pane spawn` exits `1`
    with `spawn_failed: …` and no terminal exists, so a retry does not
    pile up terminals.
-2. Poll `pane status` until it reads `idle` with confidence `native`,
-   before the first `prompt`. A trust dialog shows `pane read`, not
-   status: `read` once after every spawn.
+2. Poll `pane status` until it reads `idle` with confidence `native`
+   (a reporting agent) or, for a program that reports nothing, with
+   confidence `heuristic` under your `--patterns` file, before the
+   first `prompt`. Add `--patterns patterns.json` to every later
+   `pane status` and `pane wait` on such a terminal. A trust dialog
+   shows in `pane read`, not in status: `read` once after every
+   spawn.
 3. A trust dialog is showing: answer it with raw keys, never
    `prompt`. Look at where the cursor sits first. Claude Code's
    starts on "No, exit", so a bare `enter` quits the agent; move
@@ -178,14 +198,33 @@ races eat first prompts on most harnesses. For each dispatch:
    `read` the transcript, fix the cause, and re-dispatch from the
    top. Never assume a dispatch took.
 
-A `prompt` to a `blocked` program fails with exit `1` and
-`blocked: …` in the message (for example `blocked: t5 is blocked
-(permission)`). Nothing is typed. `read` the pane and answer the
-dialog with `hc keys`. Never go around the refusal with
-`hc send --force`: it can answer a permission request on the user's
-behalf.
-
 Then follow the core skill's dispatch ritual.
+
+## Blocked and error
+
+The driver reports both `blocked` and `error` as `blocked`; hc treats
+them differently. A `prompt` to a program that reported `blocked`
+(a permission or a question) fails with exit `1` and `blocked: …` in
+the message (for example `blocked: t5 is blocked (permission)`).
+Nothing is typed. `read` the pane and answer the dialog with
+`hc keys`. Never go around the refusal with `hc send --force`: it can
+answer a permission request on the user's behalf.
+
+A program that reported `error` is not refused: `pane prompt` types
+and submits (seen: `state=error` terminal ran the prompted command,
+exit `0`). `hc --skill` says to read why, then send or kill. So on
+`blocked` status, `read` first; then answer a dialog with `hc keys`,
+or for an error `prompt` a retry or `pane kill` it. `hc get <handle>
+--json | jq .status` shows which one was reported.
+
+## Finished terminals
+
+A terminal whose program exited is not the same as one that never
+existed. `pane status` and `pane wait` exit `4`. `pane prompt` and
+`pane interrupt` exit `1` with `finished: …`. `pane read` still works
+(exit `0`, the last output), `pane rename` works, and `pane kill`
+removes it (exit `0`). Read a finished agent's output before you kill
+it.
 
 ## Dispatch
 
@@ -222,8 +261,19 @@ wait behaves the same on every harness.
 
 ## Layout
 
-The window shows only terminals labelled `herdr.space=<id>`. Get the
-overseer's own space and pass it as `--workspace` on every spawn:
+The window shows only terminals labelled `herdr.space=<id>`.
+`herdr-app --skill` says: "Unlabeled workers stay hidden. Do not add
+labels just to run a background worker." Labelling is therefore a
+choice, not a default. The overseer skill wants agents visible at a
+glance, so labelling an implementer or reviewer is the overseer's
+deliberate visibility choice, made with the user's window in mind.
+The alternative is to omit `--workspace`: the agent runs, and stays
+in `hc ls`, `pane list`, and `hc attach <handle>`, but not in the
+window. Use it for probes, helpers, and anything the user need not
+watch.
+
+To label, get the overseer's own space and pass it as `--workspace`
+on each spawn you want shown:
 
 ```bash
 hc get "$HC_TERMINAL_ID" --json | jq -r '.labels["herdr.space"]'
@@ -234,16 +284,14 @@ multiplexer-driver --harness hc pane spawn --name impl-003 --cwd "$PWD" \
 The `jq` prints `null` when your terminal has no space (it is not in
 the window); then skip `--workspace`. Per `herdr-app --skill`, a
 terminal with `herdr.space` and no `herdr.tab` gets a new tab in that
-space, so each spawn shows up as its own tab. This run did not verify
-that against an open window; confirm it with `herdr-app ls` before you
-rely on it.
+space, so each labelled spawn shows up as its own tab. This run did
+not verify that against an open window; confirm it with `herdr-app ls`
+before you rely on it.
 
 - `herdr-app ls` lists spaces, tabs, and terminals with their ids. It
   needs the window to be open; with none it fails with "no Herdr
   window at …". Never launch bare `herdr-app` to look: that opens or
   raises the window.
-- A spawn with no `--workspace` is hidden from the window but visible
-  in `hc ls`, `pane list`, and `hc attach <handle>`.
 - Reviewer and implementer separation is by space, when the window is
   open: `herdr-app do space.new --name <run>-review` makes a review
   space and prints its id; spawn the reviewer with that id. Create a
