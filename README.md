@@ -17,6 +17,7 @@ that interface onto real commands.
 |---------|--------|
 | tmux | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
 | Herdr | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| Herdr desktop app (hc) | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
 | cmux (macOS) | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
 | tuios | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
 | T3 Code (0.1.1+) | T3 orchestrator MCP tools ([`resources/t3.md`](resources/t3.md)) |
@@ -25,8 +26,9 @@ that interface onto real commands.
 half of the mapping (the actual commands), so the skill itself only
 needs to carry the judgment calls an LLM has to make. It runs on Linux
 and macOS for tmux and Herdr, on macOS for cmux, on Linux for tuios
-(the only platform tested), and on Windows for Herdr. See Install
-below.
+(the only platform tested), and on Windows for Herdr. The Herdr
+desktop app (hc, driver `resources/hc.md`) runs on Linux, macOS, and
+Windows. See Install below.
 
 An optional judge role — typed verdicts on pane state, task-file
 lint, and review classification — is documented in
@@ -164,7 +166,9 @@ spawn. Two allow rules in `~/.claude/settings.json` prevent that:
 ```
 
 Add the two lines to the `allow` array you already have. For tmux,
-cmux, or tuios, write that harness name in both. A run that uses worktrees (three or
+cmux, tuios, or the Herdr desktop app, write that harness name (`tmux`,
+`cmux`, `tuios`, `hc`) in both. Under hc, also allow
+`"Bash(hc keys:*)"`, which answers startup dialogs. A run that uses worktrees (three or
 more implementers at once under Herdr) starts agents with
 `herdr agent start`, so add `"Bash(herdr agent start:*)"` for that
 case.

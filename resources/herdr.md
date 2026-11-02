@@ -1,5 +1,8 @@
 # Herdr driver
 
+This file is for the Herdr TUI (`herdr` 0.8–0.9). The Herdr desktop
+app (`herdr-app` + `hc`) has its own driver in `resources/hc.md`.
+
 Concrete mapping of the overseer skill's abstract interface onto
 Herdr, via the [`multiplexer-driver`][md] CLI (`--harness herdr`).
 Install it once per machine (see the README's Install section). This

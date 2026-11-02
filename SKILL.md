@@ -48,6 +48,8 @@ either ask the user to write one or fall back to working solo. Never
 improvise a tool's syntax from general knowledge of its CLI; the
 driver exists because that knowledge is usually wrong in some small,
 expensive way.
+The Herdr desktop app's signal is `HC_TERMINAL_ID`, see
+`resources/hc.md`.
 
 `status` quality varies by driver. A harness with native agent
 tracking reports it directly; one built on a plain terminal
