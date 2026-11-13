@@ -160,6 +160,20 @@ seen 2026-11-02). `hc --skill` names Codex and pi as reporters, but
 this run did not probe them: for either, check `pane status` before
 trusting it, and pass `--patterns` if it stays `unknown`.
 
+Codex sessions in practice (edges-export, 2026-11-09): a
+Codex critic spawned with `-a on-request` blocked on an approval prompt
+the first time its sandbox refused something routine (uv's cache lock),
+and the Claude auto-mode classifier denied `hc keys <handle> enter` for
+that prompt as an auto-mode bypass, so the session had to be retired.
+Spawn reviewer-family Codex sessions as `codex --no-daemon -s
+workspace-write -a never --add-dir ~/.cache/uv --add-dir
+~/.local/share/uv --add-dir /tmp -c model_reasoning_effort=<x> --model
+<model>`: three such sessions ran with no prompts. That sandbox still
+blocks `sudo` (a Docker gate stays with the overseer; the verifier
+records it as NOT RUN) and `git worktree add` (a reviewer falls back to
+`git archive <sha> | tar -x -C /tmp/<dir>`); `uvx` needs the
+`~/.local/share/uv` add-dir, else use `uv run --with <tool>`.
+
 ## Dispatch ritual
 
 Startup dialogs (folder trust, update prompts, imports) and composer
@@ -186,6 +200,12 @@ races eat first prompts on most harnesses. For each dispatch:
    hc keys <handle> enter        # cursor already on "yes"
    ```
 
+   Codex in a repo with Claude hooks (graphify) opens "Hooks need
+   review" first: `hc keys <handle> down down enter` picks "Continue
+   without trusting", which a reviewer or critic does not need (seen
+   in two consecutive runs). Under `-s workspace-write` it also
+   cannot open sockets, so Go `httptest` suites fail before their
+   assertions: plan to replay the reviewer's mutation yourself.
 4. `prompt` the task-ready nudge. Confirm it took: `pane status`
    turns `working` (`pane wait --until working --timeout 60s`). hc's
    own `send` result carries a `started` field, but the driver does
