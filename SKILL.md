@@ -141,7 +141,11 @@ consecutive runs, so it is not optional.
 
 Trivial mechanical edits (typos, version bumps, one-line config, docs
 you author) you make directly — spawning an implementer for a typo
-costs more than the edit.
+costs more than the edit. Run the task guard as a plain `if` chain
+before committing one, never inside a pipe to `tail`: a line-delete
+`sed` on comment markers took the declarations with them in two runs,
+and the pipe hid the broken build until the
+commit was in.
 
 ## Filesystem protocol
 
@@ -244,6 +248,9 @@ Commit before writing Result. No stubs, placeholders, or TODO bodies.
 The Result section of this task file is always writable, even when the
 spec marks `.overseer/` read-only.
 Do not edit or skip tests to make Acceptance pass; report instead.
+Run every command in the foreground and do not end your turn while one
+runs: a backgrounded suite ends the turn with nothing committed (ux-05
+and ux-06).
 Search the repo before assuming something is missing.
 For every new test, name in Result the one-line change to the code
 under test that makes it fail, and say that you ran it. The change
@@ -286,20 +293,65 @@ A grep over `go test -v` output must allow Go's duration suffix:
 in front of any pipeline: without it,
 `go test ./... | tail -5` exits 0 on a failed test. Assert an exit
 code against a built binary, never through a runner that rewrites it:
-`go run` turns every non-zero exit into 1 (seen in three runs).
+`go run` turns every non-zero exit into 1 (seen in three runs). `python -m
+compileall` exits 0 on a path that does not exist, so it is not a
+change check for a new module; put `python -c "import <module>"` in
+front of it (mark-pass1 and edges-export, two runs).
 Vitest counts name files, not directories, unless the directory
-count was checked with `ls`. An overseer-owned smoke script gets a
+count was checked with `ls`. A full web suite run as a guard names its failing files
+(Vitest: `--reporter=json --outputFile.json=<log>`; `tail` of the
+default output names none) and, under another run's load, a longer
+`--testTimeout`; a failure is real only after a quiet rerun of that
+file (style-polish and app-01-addendum: three unexplained
+failing runs, one caused by a neighbour's mid-run merge). An overseer-owned acceptance script (a corpus checker, a diff
+limiter, a count) is run once on a known-good input and once on an
+injected fault before dispatch; it must pass the first and catch the
+second (fitness-app S4 and S5: three such scripts, each wrong
+on first run, two of them failing open). An overseer-owned smoke script gets a
 dry run of its navigation (login, reach the target screen) against the
 dev stack before dispatch: selectors guessed from code failed on first
-run in runs 050 and 052. Before a spec prescribes a test
+run in runs 050 and 052. Such a script stops its server by listening
+port or process group, never `pkill -f`/`pgrep -f`: the pattern also
+matches the calling shell's command line and kills it (exit 144, two
+consecutive runs). Before a spec prescribes a test
 assertion or query option, copy the idiom from an existing test in the
 repo: jest-dom matchers (`toHaveAttribute`, `toBeDisabled`) and
 options like `exact` on `getByRole` are often absent or fail typecheck
-(runs phase-17 and nav-2). A UI test that asserts after an
+(runs phase-17 and nav-2). A test for one branch of an OR (a
+filter, a posture rule, a permission) needs a fixture that satisfies
+only that branch; a row that also satisfies another branch masks the
+branch's removal. A toggle test turns the control on from off, not only
+off from on (ux-04 and ux-05: four vacuous tests). A test
+asserts the value the rule requires, not that a value changed: a written
+timestamp is bracketed between clock reads taken around the request, a
+null field is checked after the status and the key's presence (indexing
+a missing key reads as null on an error body), and a link or token sent
+elsewhere is compared with the string actually sent, never one the test
+rebuilds (fitness-app S2 and S3: five such tests survived
+mutation). The rule in a brief is not enough: the task spec names the
+response helper every test reads through (one that asserts the status
+and the key's presence before returning the value), and the reviewer
+flags any field read outside it (fitness-app S4: seven more
+such tests in three tasks whose briefs carried the rule). An
+implementer reports a deviation from the spec in Result; it never
+decides one, not even with a marked comment in the code. A test of code that sends a request (a mock, a fake server) asserts the request it sent: the exact body, patch or parameters, not only that a call matched by method or id and that the parsed result looks right (mail-app unsub-header and optimistic: two runs where an id-only matcher let a wrong payload pass). A query that filters by owner (a user, tenant, or account id) is tested with a
+second owner's competing rows in every table it reads, and asserts the exact
+rows returned; otherwise deleting the owner predicate passes every test
+(fitness-app S6: two tasks, and the authz matrix did not catch it,
+because it checks who may call a route, not which rows come back). A wait in
+a test is a time deadline, never a count of polls, which a loaded machine
+exhausts early. A test of a filter that a lower layer also enforces (row-level
+security, a middleware, a foreign key) disables that layer in a
+rolled-back transaction, or the filter's removal passes unnoticed
+(ux-04 and app-01). A UI test that asserts after an
 asynchronous refresh must first wait for something the refresh
 visibly changes; otherwise it asserts on the pre-refresh DOM and
 passes whatever the refresh does (three of five tests that could not
-fail in run fix-1). A task that adds stateful UI (a form, a guard, a
+fail in run fix-1). The same holds for a first load: an absence check, a count of zero
+or a layout measurement waits for a positive marker of loaded data
+(a row known to exist) first, or it passes on a loading or error
+state (ux-05 and ux-coverage: an empty-state check and
+zoom measurements taken before the list arrived). A task that adds stateful UI (a form, a guard, a
 stale-read notice, a gate) lists its transitions as a table
 ("state, event, next state"), including a second failure while
 already in the failure state, recovery, a remount, a second form
@@ -320,9 +372,22 @@ alone: run the other platform's CI, or a cross-target lint, first. A
 Linux box cannot see an import used only under another `cfg`, or a
 CRLF checkout that changes fixture bytes; commit a `.gitattributes`
 that pins line endings before fixtures land (seen in multiplexer-driver
-run 2 and overseer-judge run 2). Two tasks
+run 2 and overseer-judge run 2). Before dispatch, grep the tests for whatever the spec changes and put
+every test that pins it in `Allowed`, with the one edit it needs: a
+whole-value comparison of a struct that gains a field, a class name
+the spec removes, a label an e2e spec selects by, and a golden list
+of every member of the set the spec adds to (routes, operation ids,
+tables) (four runs: app-01, style-polish, reviewer-eligibility,
+role-menus).
+Two tasks
 whose `Allowed` lists overlap are one task mis-partitioned, or they
 run serially.
+A grep a work list gives for a forbidden pattern is a lower bound, not
+the inventory: before planning, widen it to the other spellings of the
+same rule (an equality, a list `includes`, a `switch`, a set lookup)
+and put every hit in scope or in the report
+(app-01-addendum and assignee-eligibility: two runs missed role lists
+written as `includes`).
 Before the critic sees a spec, for every new function it names, state
 the empty input, the whitespace-only input, and the duplicated input
 and what each yields: in two consecutive runs (0.8.3
@@ -446,7 +511,11 @@ item as unanswered.
    fresh session; brief: the task file path and the diff, nothing
    else. It runs `Acceptance` and `Smoke`, writes pass/fail with
    output under `Verification`, and retires. A fail goes back to the
-   implementer as a spec-referenced defect.
+   implementer as a spec-referenced defect. Run the verifier after the
+   reviewer's mutation pass, never alongside it, and keep implementers'
+   suites off the box while it runs. Under shared load, timeouts and
+   timing checks fail spuriously; three runs paid for re-runs
+   (ux-01, ux-03, frameworks).
 8. **Review rounds** (if reviewer enabled), per the loop below.
 9. **Gate 3: final acceptance.** Check the whole product against
    `PLAN.md`, run the full suite, append this run's `LESSONS` to
@@ -490,7 +559,12 @@ only when `list()` shows no other live session working in that repo.
 Another live session in the repo, or three or more concurrent
 implementers, means one worktree per agent, and you own the merge.
 Never switch branches in a shared checkout without that `list()`
-check. Another run's lease in `.overseer/active/` is another live
+check. Nothing of yours lands on a checkout an implementer is in, not
+a one-line edit and not a docs-only commit: an edit fails the gate on
+the half-built tree, and a commit moves `HEAD` under the implementer
+and breaks its BASE-relative scope check (one run once, this
+rule's second run twice). Queue it for the merge window, and verify a
+task's scope against its commit's parent. Another run's lease in `.overseer/active/` is another live
 session whatever `list()` shows, so it forces worktrees too. While
 one exists, push only your own commits (`git push origin
 <sha>:<branch>`, never the branch): a branch push publishes the other
@@ -591,7 +665,17 @@ finding (a probe test, a command), it fails before the fix and
 passes after it. For a vacuous-test finding (a mutation the test
 missed), the reviewer's round-1 record shows the test passing under
 the mutation; after the fix the unmutated test passes and the
-mutated run fails on the test's own assertion. Record the captured
+mutated run fails on the test's own assertion. Reviewer probes and
+mutation scripts usually hard-code the reviewer's scratch checkout and
+port: repoint them to a disposable checkout of the fix commit before
+replaying (ux-01 and ux-02). A probe that now fails only
+because the fix legitimately added a second match (a hidden duplicate
+element) is adapted to count visible matches, and the adaptation is
+recorded. Print the diff of every replay mutation and check it is
+non-empty before the run: a `sed` that matches nothing (a call that
+spans two lines, a guessed variable name) leaves the code unmutated,
+and the passing run proves nothing (ux-04, ux-05 and
+ux-coverage, three misses in one run). Record the captured
 output in the task's `Verification` as "verified by overseer,
 round-N repro", and set the item's `- status:` to `resolved` in the
 round file (add no other line to the round file). `last reviewed:`
