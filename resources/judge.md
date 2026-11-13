@@ -109,8 +109,12 @@ yourself. `--dry-run` request records never carry `status`. Check the
 parse before you act on a verdict:
 
 - Exit 2 with `no review items`: no header in the file matched the
-  layout. Read the round yourself, as for any judge failure, and
-  quote the layout in the next brief.
+  layout. A clean round (`verdict: approve` and no items) exits this
+  way too, and needs no action. Otherwise read the round yourself, as
+  for any judge failure, and quote the layout in the next brief.
+- The judge does not read the verdict block. The `---` line ends the
+  last item, so the block stays out of that item's body (checked on
+  0.3.2). Check for the `verdict:` line yourself.
 - A `warnings` field on an item: part of that item did not parse, so
   the judge's verdict on it does not count. This is not a missing
   response. Do not send the item back. Read the item yourself. The

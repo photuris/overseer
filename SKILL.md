@@ -101,6 +101,15 @@ task forces you to rebuild. If you proceed without one, say so
 explicitly, in `STATE.md` and to the user. A silently vanished
 reviewer is how review lapses for a dozen tasks unnoticed.
 
+Then check the base. `base:` in `STATE.md` is the target-branch commit
+of your last Acceptance dry runs. Fetch, and list the files that
+changed on the target branch since then (`git diff --name-only
+<base>..origin/<branch>`). A changed file in an unaccepted task's
+`Allowed` or `Read-only` list makes that spec stale. Repeat its
+Acceptance dry run at the new commit before you dispatch it, then set
+`base:` to the new commit. A plan that waited two days at a gate
+describes a branch that another run may have merged into.
+
 ## Roles
 
 | Role | Does | Never does |
@@ -164,7 +173,7 @@ Respond in that file."
     PLAN.md            # the approved plan
     STATE.md           # run state: roster (role -> agent name, model),
                        #   tasks, statuses, last reviewed: <commit>,
-                       #   degradations, open items
+                       #   base: <commit>, degradations, open items
     tasks/NNN-slug.md  # one per task: spec, acceptance, status, result,
                        #   verification output
     review/plan.md     # plan-critic findings, before Gate 1
@@ -442,6 +451,10 @@ A rate of 0 is not exercised by any test.
 
 - response: evidence: `tests/test_limiter.py:88` asserts that a zero
   rate raises `ValueError`.
+
+---
+
+verdict: changes
 ```
 
 - The reviewer writes the header, the metadata, and the finding. The
@@ -453,6 +466,10 @@ A rate of 0 is not exercised by any test.
   indents every continuation line two spaces. It opens with what the
   reply does: `fixed in <sha>`, `evidence:`, or `concern:`. A later
   reply to the same item is another `- response:` line.
+- The reviewer ends the file with a `---` line and then `verdict:
+  changes` or `verdict: approve`, and writes them last. `approve`
+  means the round has no `blocking` item. A clean round is the title
+  and this block. Responses go above the `---`.
 
 The layout is what makes an item addressable, and it is the only
 layout the judge parses. A reply written any other way (`Response
@@ -517,10 +534,13 @@ item as unanswered.
    timing checks fail spuriously; three runs paid for re-runs
    (ux-01, ux-03, frameworks).
 8. **Review rounds** (if reviewer enabled), per the loop below.
-9. **Gate 3: final acceptance.** Check the whole product against
+9. **Gate 3: final acceptance.** Repeat the base check from On
+   resume. Check the whole product against
    `PLAN.md`, run the full suite, append this run's `LESSONS` to
    `.overseer/LESSONS.md`, delete your lease, and report to the user
-   with evidence. Announce the gate (below).
+   with evidence. The report lists each decision you made for the
+   user: an adjudication, a review you skipped, a deviation you
+   accepted, a merge choice. Announce the gate (below).
 
 ## Verification evidence
 
@@ -634,7 +654,22 @@ a scratch copy and runs the test; a test that still passes is a
 example a `git worktree` of the fix commit in a temp directory); the
 reviewer never edits the reviewed checkout.
 
-1. Reviewer writes per-item findings to `review/round-N.md`.
+From round 2 on, the review scope is two things. The first is the
+items of earlier rounds that are neither `resolved` nor `rebutted`,
+named by id. The second is the diff from the commit the previous round
+reviewed to the fix commit. The rest of the brief is the round 1
+brief, mutation runs and layout included. The reviewer checks each
+named fix and reviews that diff. A fix that does not hold becomes a
+new item that cites the old id. A second full read of code that
+round 1 passed raises new items, and step 5 then reads them as a
+deadlock. A debt-forced round keeps its whole-span scope.
+
+1. Reviewer writes per-item findings to `review/round-N.md` and ends
+   the file with the verdict block. A round file with no `verdict:`
+   line is an unfinished review, never a pass: a reviewer that stopped
+   after the title leaves the same file as one that found nothing.
+   Treat it as a wait that returned without its artifact (Dispatch
+   ritual, step 3).
 2. Implementer addresses or rebuts each item in place, as a
    `- response:` line in the Review file layout. A rebuttal is
    typed `evidence` (a code citation, a test, a repro) or `concern`
@@ -696,8 +731,8 @@ review file and fix the task file before the implementer touches code.
 Exactly three: plan approval before implementation, a deadlock you
 cannot settle, final acceptance. Everything else is yours to decide.
 Announce each through `notify`, if your harness offers it, so the
-user is not the monitor; if it doesn't, say so directly in your own
-reply instead. Reserve whatever "urgent" signal `notify` offers for
+user is not the monitor; if it doesn't, announce it the way your
+driver gives, or failing that directly in your own reply. Reserve whatever "urgent" signal `notify` offers for
 these three gates and nothing else; a gate signal that also fires on
 routine progress trains the user to ignore it.
 
@@ -746,6 +781,7 @@ absorbed it; that is the loop this section closes.
   whose acceptance is not a command with expected output.
 - Treating your own test runs and diff reads as a substitute for the
   reviewer — the mind that wrote the spec cannot see its own seams.
+- Reading a round file with no `verdict:` line as a clean review.
 - Resuming a session without checking the roster in `STATE.md`
   against `list()`.
 - Switching branches in a shared checkout without a `list()` check.
