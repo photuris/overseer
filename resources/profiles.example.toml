@@ -11,6 +11,10 @@
 #
 # A twin of this file ships with the overseer skill as
 # resources/profiles.example.toml.
+#
+# The judge is optional and off here. It needs a TypeSafe API key, and
+# it sends pane, task, and review text to that API. To use it, install
+# overseer-judge and remove the `#` from a `judge` line.
 
 default = "claude"
 
@@ -18,16 +22,16 @@ default = "claude"
 overseer    = "claude"
 implementer = "claude --model claude-sonnet-5-5"
 reviewer    = "codex -c model_reasoning_effort=medium --model gpt-6-astra"
-judge       = "overseer-judge"
+# judge     = "overseer-judge"
 
 [profiles.open]
 overseer    = "pi --model code/kimi-k3"
 implementer = "pi --model code/glm-5.3"
 reviewer    = "pi --model code/ds-v4-pro"
-judge       = "overseer-judge"
+# judge     = "overseer-judge"
 
 [profiles.codex]
 overseer    = "codex -c model_reasoning_effort=medium --model gpt-6-astra"
 implementer = "claude --model claude-opus-5-5"
 reviewer    = "claude --model claude-opus-5-5"
-judge       = "overseer-judge"
+# judge     = "overseer-judge"
