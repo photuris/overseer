@@ -27,13 +27,17 @@ directly.
   <profile>`), which sets the roster variables before the skill runs.
   It is a twin of that repo's `profiles.example.toml`; change both.
   Not part of the primitive interface.
-- `install.sh`, `install.ps1` — setup scripts that run the three
-  companion binaries' own release installers in turn. They hold no
-  install logic of their own. `.github/workflows/install.yml` runs
-  both for real on Linux, macOS, and Windows; it is the only test of
-  `install.ps1`, so do not merge a change to either script without a
-  green run. A binary added to or removed from the README's install
-  steps changes both scripts and the workflow too.
+- `install.sh`, `install.ps1` — setup scripts. They run the companion
+  binaries' own release installers in turn (the judge only on
+  request), clone this skill into the agent's skills directory, and
+  run `overseer init` when there is no profile file. They never change
+  a skill directory or a profile file that exists. Keep the two
+  scripts the same in flags and behavior.
+  `.github/workflows/install.yml` runs both for real on Linux, macOS,
+  and Windows; it is the only test of `install.ps1`, so do not merge a
+  change to either script without a green run. A binary added to or
+  removed from the README's install steps changes both scripts and the
+  workflow too.
 
 [driver]: https://github.com/photuris/multiplexer-driver
 [judge]: https://github.com/photuris/overseer-judge
