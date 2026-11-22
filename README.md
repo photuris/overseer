@@ -311,7 +311,25 @@ has the other agents and a lighter system-prompt variant.
 
 Update the skill with `git -C ~/.claude/skills/overseer pull` (Codex:
 `~/.agents/skills/overseer`). Run the install script again to update
-the binaries.
+the binaries. Each driver file names the oldest `multiplexer-driver`
+it works with, and the overseer checks that at the start of a run. If
+it tells you the driver is too old, run the install script again.
+
+Releases of the skill are git tags, listed on the
+[releases page](https://github.com/photuris/overseer/releases). The
+install script gives you the newest commit. To stay on one release,
+clone it by tag:
+
+```sh
+git clone --depth 1 --branch <tag> https://github.com/photuris/overseer ~/.claude/skills/overseer
+```
+
+In a bug report, give both versions:
+
+```sh
+git -C ~/.claude/skills/overseer log -1 --format='%h %cs'
+multiplexer-driver --version
+```
 
 The skill never writes what it learns into its own files, so the pull
 stays clean. Each run

@@ -62,8 +62,10 @@ under an approximated one, lean on `read` more than `status` and treat
 
 Verify overseer mode is actually enabled before orchestrating anything
 — your driver states the exact signal to check (Herdr's is in
-`resources/herdr.md`). Then load the roster the way your driver
-documents. A roster has up to three entries:
+`resources/herdr.md`). Then check the version of the driver's tool,
+if your driver file names a minimum: a tool older than the file fails
+in the middle of a run, not at the start. Then load the roster the
+way your driver documents. A roster has up to three entries:
 
 - implementer — launches an implementer agent. Required.
 - reviewer — launches the reviewer, verifier, and plan-critic agents.
