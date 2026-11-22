@@ -94,6 +94,8 @@ for all agent-launch and session mechanics; do not improvise syntax.
 
 **On resume** (session restart, compaction recovery, workspace change,
 or any moment an expected agent is not where `STATE.md` says):
+first read the local rules file again (under Lessons), because
+compaction drops it from your context. Then
 re-verify the roster before dispatching anything. `list()` live agents
 and compare against the roster recorded in `STATE.md`. Rebuild every
 missing agent — the reviewer too, not just whichever agent the next
@@ -511,7 +513,8 @@ item as unanswered.
    means a worktree for every implementer, whatever `list()` shows,
    and a resource another lease claims is touched only with the
    user's approval. `list()` sees one harness; the lease is how two
-   overseers on different harnesses find each other.
+   overseers on different harnesses find each other. Then read the
+   local rules file (under Lessons), if it exists.
 2. **Recon and plan.** Explore the repo cheaply yourself (this is
    reading, not implementing). Write `PLAN.md`: task breakdown, each
    task with explicit file paths and acceptance criteria concrete
@@ -562,10 +565,12 @@ item as unanswered.
 9. **Gate 3: final acceptance.** Repeat the base check from On
    resume. Check the whole product against
    `PLAN.md`, run the full suite, append this run's `LESSONS` to
-   `.overseer/LESSONS.md`, delete your lease, and report to the user
+   `.overseer/LESSONS.md`, promote any repeated friction (under
+   Lessons), delete your lease, and report to the user
    with evidence. The report lists each decision you made for the
    user: an adjudication, a review you skipped, a deviation you
-   accepted, a merge choice. Announce the gate (below).
+   accepted, a merge choice. It also quotes each rule you added to
+   the local rules file. Announce the gate (below).
 
 ## Verification evidence
 
@@ -768,10 +773,27 @@ At Gate 3, append a `LESSONS` section for this run to
 this run, which spec defects caused review rounds, any tooling quirk.
 Then check the previous run's section, directly above yours (or your
 own longer-term notes, if you keep them). A friction that appears in
-two runs is promoted into this skill in the same session, not into
-another memory note.
-Four memory notes recorded the swallowed-Enter bug before this skill
-absorbed it; that is the loop this section closes.
+two runs is promoted in the same session: append it as a rule to the
+local rules file, not as another memory note.
+
+The local rules file is the user's own, shared by every repo on the
+machine:
+
+```
+${XDG_CONFIG_HOME:-$HOME/.config}/overseer/rules.md
+%APPDATA%\overseer\rules.md                          # Windows
+```
+
+Create it if it is missing. One rule is one bullet: the instruction,
+then the two runs that paid for it and today's date. Do not add a
+rule that is there already. Read the file at every start and resume,
+and follow its rules as you follow this skill. A local rule adds to
+this skill. It never removes a gate or a check: if one tries to,
+follow this skill and tell the user. A lesson never goes into this
+skill's own files: they are an installed copy, and a local edit
+blocks the next update.
+Four memory notes recorded the swallowed-Enter bug before one rule
+replaced them; that is the loop this section closes.
 
 ## Red flags — stop and correct course
 
@@ -812,5 +834,7 @@ absorbed it; that is the loop this section closes.
 - Switching branches in a shared checkout without a `list()` check.
 - Writing any ledger file before your lease, or moving, archiving,
   or editing a ledger file another run created.
+- Writing a lesson into this skill's own files. A promoted lesson
+  goes in the local rules file.
 - Restarting a server, pushing a branch, or resetting a database that
   another live lease claims, without the user's approval.

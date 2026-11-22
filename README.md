@@ -301,6 +301,26 @@ type a task. The
 [launcher README](https://github.com/photuris/overseer-launch#loading-the-skill-at-startup)
 has the other agents and a lighter system-prompt variant.
 
+## Update, and what the skill learns
+
+Update the skill with `git -C ~/.claude/skills/overseer pull` (Codex:
+`~/.agents/skills/overseer`). Run the install script again to update
+the binaries.
+
+The skill never writes what it learns into its own files, so the pull
+stays clean. Each run
+appends its lessons to `.overseer/LESSONS.md` in the repository it
+worked on. When the same problem costs two runs, the overseer writes
+it as a rule in a file that is yours:
+
+```
+~/.config/overseer/rules.md          # Windows: %APPDATA%\overseer\rules.md
+```
+
+The overseer reads that file at the start of every run, in every
+repository. You can edit or delete a rule at any time. If a rule would
+help other people, open an issue or a pull request with it.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
