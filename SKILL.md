@@ -300,7 +300,10 @@ A grep over `go test -v` output must allow Go's duration suffix:
 `--- PASS: TestName (0.00s)`, so end the pattern in ` \(`, never `$`
 (every task in one run had this defect). Put `set -o pipefail`
 in front of any pipeline: without it,
-`go test ./... | tail -5` exits 0 on a failed test. Assert an exit
+`go test ./... | tail -5` exits 0 on a failed test. A count check
+written `test "$(cmd | grep -c X)" = N` discards cmd's exit status
+even under `pipefail`: capture the output, test the status, then the
+count (fieldcontent and live-findings, two runs). Assert an exit
 code against a built binary, never through a runner that rewrites it:
 `go run` turns every non-zero exit into 1 (seen in three runs). `python -m
 compileall` exits 0 on a path that does not exist, so it is not a
@@ -316,10 +319,27 @@ failing runs, one caused by a neighbour's mid-run merge). An overseer-owned acce
 limiter, a count) is run once on a known-good input and once on an
 injected fault before dispatch; it must pass the first and catch the
 second (fitness-app S4 and S5: three such scripts, each wrong
-on first run, two of them failing open). An overseer-owned smoke script gets a
+on first run, two of them failing open). A spec that prescribes shell for a remote or privileged step (an
+install over `ssh` and `sudo`, a guard that decides whether to replace
+a file) lists every external tool the script calls and has a test with
+each tool missing and with each tool failing after it printed output; it
+opens no file with truncation and refuses a symbolic link where it
+creates one. The overseer's own template is the likeliest defect: in
+two consecutive runs (notes-api and notes-write) every blocking review
+finding on such a script was in text the overseer supplied "verbatim".
+Before a task edits a script, check whether a live timer or unit runs
+that file from the checkout; if one does, the first commit is a deploy
+(notes-write: an hourly publish failed for hours on a new default path).
+An overseer-owned smoke script gets a
 dry run of its navigation (login, reach the target screen) against the
 dev stack before dispatch: selectors guessed from code failed on first
-run in runs 050 and 052. Such a script stops its server by listening
+run in runs 050 and 052. A device (Android WebView) smoke script needs
+the whole script dry-run on an emulator, then once on the target phone,
+before Gate 3, and the schedule should budget for it: names, gestures,
+and the visible-only snapshot differ from the browser, so drafts failed
+for a dozen or more runs (F1 and F2a). Start swipes inside the screen
+away from its edges, because a gesture-nav phone reads an edge swipe as
+Back while a 3-button emulator does not (F2a). Such a script stops its server by listening
 port or process group, never `pkill -f`/`pgrep -f`: the pattern also
 matches the calling shell's command line and kills it (exit 144, two
 consecutive runs). Before a spec prescribes a test
@@ -401,6 +421,11 @@ Before the critic sees a spec, for every new function it names, state
 the empty input, the whitespace-only input, and the duplicated input
 and what each yields: in two consecutive runs (0.8.3
 and 0.8.4) every blocking critic finding was one of these left unsaid.
+A spec that keeps an in-run queue or cache keyed by a shared identifier
+(a company GUID, an alert id) lists every exit path of the per-record
+function, the early skips included, and says what each does to an
+entry an earlier record left under the same key (0.8.3 and
+0.9.0: the reviewer's blocking finding both times).
 
 An overseer-written black-box probe test (copied into the package by
 the task's Acceptance, never editable by the implementer) raises the
