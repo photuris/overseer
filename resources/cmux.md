@@ -1,5 +1,11 @@
 # cmux driver
 
+> **Experimental.** This driver was checked against one version of
+> cmux and has had little use in full overseer runs. At the startup
+> check, tell the user once that the driver is experimental. When a
+> command does not behave as this file says, tell the user what it
+> did before you continue.
+
 Concrete mapping of the overseer skill's abstract interface onto
 cmux, via the [`multiplexer-driver`][md] CLI (`--harness cmux`).
 Install it once per machine (see the README's Install section). cmux
