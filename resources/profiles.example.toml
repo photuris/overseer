@@ -16,22 +16,42 @@
 # it sends pane, task, and review text to that API. To use it, install
 # overseer-judge and remove the `#` from a `judge` line.
 
+# Every `overseer` command ends with a starting prompt, so the agent
+# loads the skill at launch. The prompt is in escaped double quotes,
+# which work under both `sh` and `cmd`.
+#
+# An implementer and a reviewer must edit files and run tests without
+# asking you. If your agent asks by default, add its flag to those
+# commands: for Claude Code, `--permission-mode auto`.
+
 default = "claude"
 
+# Claude Code as overseer and implementer, Codex as reviewer. A
+# reviewer from another model family does not share the blind spots of
+# the implementer.
 [profiles.claude]
-overseer    = "claude"
+overseer    = "claude --model claude-fable-5-2 \"/overseer\""
 implementer = "claude --model claude-sonnet-5-5"
-reviewer    = "codex -c model_reasoning_effort=medium --model gpt-6-astra"
+reviewer    = "codex -c model_reasoning_effort=high --model gpt-6.1-sol"
 # judge     = "overseer-judge"
 
-[profiles.open]
-overseer    = "pi --model code/kimi-k3"
-implementer = "pi --model code/glm-5.3"
-reviewer    = "pi --model code/ds-v4-pro"
-# judge     = "overseer-judge"
-
-[profiles.codex]
-overseer    = "codex -c model_reasoning_effort=medium --model gpt-6-astra"
-implementer = "claude --model claude-opus-5-5"
+# Claude Code only, for a machine without Codex.
+[profiles.claude-only]
+overseer    = "claude --model claude-fable-5-2 \"/overseer\""
+implementer = "claude --model claude-sonnet-5-5"
 reviewer    = "claude --model claude-opus-5-5"
 # judge     = "overseer-judge"
+
+# Codex as overseer, Claude Code for the work.
+[profiles.codex]
+overseer    = "codex -c model_reasoning_effort=high --model gpt-6.1-sol \"Load the overseer skill and confirm the roster.\""
+implementer = "claude --model claude-sonnet-5-5"
+reviewer    = "claude --model claude-opus-5-5"
+# judge     = "overseer-judge"
+
+# Any other agent that takes a prompt as its last argument works the
+# same way. Remove the `#` and put in your own model names.
+# [profiles.other]
+# overseer    = "pi --model <provider>/<model> \"Load the overseer skill and confirm the roster.\""
+# implementer = "pi --model <provider>/<cheaper-model>"
+# reviewer    = "pi --model <provider>/<another-model>"
