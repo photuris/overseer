@@ -28,6 +28,17 @@ wait timed out).
 Set `MULTIPLEXER_DRIVER_HARNESS=tmux` once per shell to drop
 `--harness tmux` from every call; the commands below spell it out.
 
+## Signal and preconditions
+
+```bash
+test -n "${TMUX:-}"
+```
+
+A set `TMUX` means you are running inside tmux at all. Overseer mode
+is on when the user invoked `/overseer` in this session, or told you
+to load this skill. tmux has no `HERDR_OVERSEER` equivalent, and the
+launcher sets none.
+
 ## Primitive mapping
 
 | Primitive | Command |
@@ -220,7 +231,8 @@ tmux send-keys -t <handle> Down Enter
 
 # The agent's resolved command line, when its banner has scrolled off.
 pid=$(tmux display-message -p -t <handle> '#{pane_pid}')
-ps -o args= -p "$pid" --ppid "$pid"
+ps -o args= -p "$pid"
+for child in $(pgrep -P "$pid"); do ps -o args= -p "$child"; done
 ```
 
 ## List

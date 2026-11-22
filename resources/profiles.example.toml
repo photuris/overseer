@@ -4,9 +4,9 @@
 #
 # Full commands only. Each value runs under `sh -c` (`cmd /C` on
 # Windows), a non-interactive shell, so shell aliases from your rc file
-# are not visible here. HERDR_OVERSEER=1 is set automatically under
-# Herdr (HERDR_ENV=1) or the Herdr desktop app's core (HC_TERMINAL_ID
-# set); do not put it in a profile. A Codex entry used under the
+# are not visible here. HERDR_OVERSEER=1 is set automatically when
+# HERDR_ENV=1 or HC_TERMINAL_ID is set (the Herdr desktop app's core
+# sets it); do not put it in a profile. A Codex entry used under the
 # desktop app needs `--no-daemon`, or its commands run outside hc.
 #
 # A twin of this file ships with the overseer skill as

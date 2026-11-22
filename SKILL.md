@@ -49,7 +49,8 @@ improvise a tool's syntax from general knowledge of its CLI; the
 driver exists because that knowledge is usually wrong in some small,
 expensive way.
 The Herdr desktop app's signal is `HC_TERMINAL_ID`, see
-`resources/hc.md`.
+`resources/hc.md`. A desktop app terminal can carry `HERDR_ENV=1`
+too. When both are set, `HC_TERMINAL_ID` decides: load `hc.md`.
 
 `status` quality varies by driver. A harness with native agent
 tracking reports it directly; one built on a plain terminal
