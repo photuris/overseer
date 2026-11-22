@@ -5,51 +5,88 @@ expensive, high-capability model plans, specifies, and reviews, while
 cheaper agents do the implementation work, coordinating through files
 instead of through the overseer as a message bus.
 
-The skill's mechanics are written against a small abstract interface —
-`spawn`, `status`, `read`, `prompt`, `list`, `rename`, `interrupt`,
-`notify`, `layout` — rather than any one terminal harness. Each
-supported harness gets its own `resources/<harness>.md` file mapping
-that interface onto real commands.
+It runs in tmux, Herdr, or T3 Code, with Claude Code, Codex, or any
+agent that loads Agent Skills as the overseer.
 
-## Harnesses
+## What it catches
 
-| Harness | Status | Platforms | Driver |
-|---------|--------|-----------|--------|
-| tmux | Supported | Linux, macOS | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| Herdr | Supported | Linux, macOS, Windows | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| Herdr desktop app (hc) | Supported | Linux, macOS, Windows | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| T3 Code (0.1.1+) | Supported | Where T3 Code runs | T3 orchestrator MCP tools ([`resources/t3.md`](resources/t3.md)) |
-| cmux | Experimental | macOS | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| tuios | Experimental | Linux (the only one tested) | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+Give a feature to a coding agent and it reports "done, all tests
+pass". The skill is built around the ways that report is wrong.
 
-- **Supported:** the maintainer runs real sessions on this harness. A
-  problem with it is a bug, so report it.
-- **Experimental:** the driver was checked against one version of the
-  harness and has had little use in full runs. It can fail in ways
-  the driver file does not describe. Reports are welcome, with no
-  promise of a fix.
+| What goes wrong | What the overseer does |
+|-----------------|------------------------|
+| The tests were not run, or not on the final code | It runs each acceptance command itself and puts the output in the task file. A transcript is not evidence. |
+| A new test passes with or without the change | Before work starts, it runs each acceptance command on the untouched code. A check that already passes there is a defect in the spec. For each new test, the implementer names a one-line change to the code that makes the test fail, and the reviewer replays it. |
+| The agent built something beside what was asked | Each task lists the files it may change. A change outside the list is a review finding. |
+| The plan was wrong before any code existed | A plan critic reads the plan and the task files before you approve them. |
+| Review goes in circles | Each finding has an id and a status. A rebuttal needs evidence. The number of open blocking findings must fall each round, or the overseer stops the loop and decides. |
+| An agent stalls, or reports done with nothing committed | It checks the task file and `git log` before it believes a status, and samples the output of each working agent. |
+| The session restarts and its context is gone | The plan, each task, each review round, and the run state are files in `.overseer/`. A new session reads them and continues. |
+| Two runs collide in one repository | Each run holds a lease that names what it will change. |
 
-If you are new, start with tmux or Herdr.
+You decide at three points: you approve the plan, you settle a
+deadlock the overseer cannot settle, and you accept the result. The
+overseer decides everything else and tells you what it decided.
 
-`multiplexer-driver` is a small CLI that implements the deterministic
-half of the mapping (the actual commands), so the skill itself only
-needs to carry the judgment calls an LLM has to make. See Install
-below.
+## What a run leaves behind
 
-An optional judge role — typed verdicts on pane state, task-file
-lint, and review classification — is documented in
-`resources/judge.md` and backed by
-[overseer-judge](https://github.com/photuris/overseer-judge).
+A run writes one folder in your repository. The names below are made
+up; the layout and the formats are the real ones.
 
-An optional launcher starts a session from a named profile of role
-commands, in place of setting the roster variables by hand:
-[overseer-launch](https://github.com/photuris/overseer-launch).
+```
+.overseer/
+  active/2026-11-20-rate-limit.md    the lease: this run is live
+  LESSONS.md                         what each run learned
+  runs/2026-11-20-rate-limit/
+    PLAN.md                          the plan you approved
+    STATE.md                         who is running, what is done
+    tasks/001-limiter-core.md        spec, acceptance, result, proof
+    tasks/002-limiter-config.md
+    review/plan.md                   the plan critic's findings
+    review/round-1.md                review findings and replies
+```
 
-| Binary | Needed | Role |
-|--------|--------|------|
-| [`multiplexer-driver`](https://github.com/photuris/multiplexer-driver) | required for every harness except T3 Code | runs the harness commands |
-| [`overseer-judge`](https://github.com/photuris/overseer-judge) | optional | typed verdicts for the judge role |
-| [`overseer`](https://github.com/photuris/overseer-launch) | optional | starts a session from a profile |
+A task file is the whole contract with an implementer. This is part
+of one after the task was accepted:
+
+```markdown
+# 001 limiter-core
+Status: accepted
+## Files
+Allowed: src/limiter.py, tests/test_limiter.py
+Read-only: src/config.py
+## Acceptance
+Command: uv run pytest tests/test_limiter.py -q
+Expect: exit 0, "12 passed" (change check: fails at BASE)
+## Result
+BASE: 4e1f0a2. Commit: abc1234.
+test_burst fails when limiter.py:41 reads 1 in place of `burst`. Ran it.
+## Verification
+$ uv run pytest tests/test_limiter.py -q
+12 passed in 0.41s
+```
+
+A review round is a list of findings that each get a reply:
+
+```markdown
+### R1-01: Limiter ignores the burst setting
+
+- file: src/limiter.py
+- severity: blocking
+- status: resolved
+
+`src/limiter.py:41` reads `rate` and never reads `burst`, so a burst
+of 20 is throttled like a burst of 1. Repro: `uv run pytest -k burst`.
+
+- response: fixed in abc1234. The limiter now reads `burst` from
+  config; `tests/test_limiter.py::test_burst` covers it.
+
+---
+
+verdict: changes
+```
+
+[`SKILL.md`](SKILL.md) is the full method.
 
 ## Install
 
@@ -110,6 +147,52 @@ already exists. Run it again to update the binaries.
 The piped form takes the same options: `... | sh -s -- --with-judge`.
 On Windows, run the script from a clone of this repository:
 `powershell -ExecutionPolicy Bypass -File install.ps1 -WithJudge`.
+
+## Harnesses
+
+The skill's mechanics are written against a small abstract interface —
+`spawn`, `status`, `read`, `prompt`, `list`, `rename`, `interrupt`,
+`notify`, `layout` — rather than any one terminal harness. Each
+supported harness gets its own `resources/<harness>.md` file mapping
+that interface onto real commands.
+
+| Harness | Status | Platforms | Driver |
+|---------|--------|-----------|--------|
+| tmux | Supported | Linux, macOS | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| Herdr | Supported | Linux, macOS, Windows | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| Herdr desktop app (hc) | Supported | Linux, macOS, Windows | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| T3 Code (0.1.1+) | Supported | Where T3 Code runs | T3 orchestrator MCP tools ([`resources/t3.md`](resources/t3.md)) |
+| cmux | Experimental | macOS | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| tuios | Experimental | Linux (the only one tested) | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+
+- **Supported:** the maintainer runs real sessions on this harness. A
+  problem with it is a bug, so report it.
+- **Experimental:** the driver was checked against one version of the
+  harness and has had little use in full runs. It can fail in ways
+  the driver file does not describe. Reports are welcome, with no
+  promise of a fix.
+
+If you are new, start with tmux or Herdr.
+
+`multiplexer-driver` is a small CLI that implements the deterministic
+half of the mapping (the actual commands), so the skill itself only
+needs to carry the judgment calls an LLM has to make. See Install
+below.
+
+An optional judge role — typed verdicts on pane state, task-file
+lint, and review classification — is documented in
+`resources/judge.md` and backed by
+[overseer-judge](https://github.com/photuris/overseer-judge).
+
+An optional launcher starts a session from a named profile of role
+commands, in place of setting the roster variables by hand:
+[overseer-launch](https://github.com/photuris/overseer-launch).
+
+| Binary | Needed | Role |
+|--------|--------|------|
+| [`multiplexer-driver`](https://github.com/photuris/multiplexer-driver) | required for every harness except T3 Code | runs the harness commands |
+| [`overseer-judge`](https://github.com/photuris/overseer-judge) | optional | typed verdicts for the judge role |
+| [`overseer`](https://github.com/photuris/overseer-launch) | optional | starts a session from a profile |
 
 ## Manual install
 
