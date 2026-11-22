@@ -161,7 +161,7 @@ Agents"). The user clears this with allow rules in
   command. That is the outcome the classifier denied.
 - A Claude Code implementer can stop before its commit on a transient
   tool error such as "Bash classifier errored on three attempts"
-  (seen twice in run fix-1). That is not degradation: with a coherent
+  (seen twice in one run). That is not degradation: with a coherent
   transcript, re-prompt it once with the task nudge (the core skill's
   health watch has the general rule).
 - The worktree path in Isolation starts agents with `herdr agent

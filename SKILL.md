@@ -95,7 +95,8 @@ for all agent-launch and session mechanics; do not improvise syntax.
 **On resume** (session restart, compaction recovery, workspace change,
 or any moment an expected agent is not where `STATE.md` says):
 first read the local rules file again (under Lessons), because
-compaction drops it from your context. Then
+compaction drops it from your context. Read `resources/spec-pitfalls.md`
+again before you write or change a task file. Then
 re-verify the roster before dispatching anything. `list()` live agents
 and compare against the roster recorded in `STATE.md`. Rebuild every
 missing agent — the reviewer too, not just whichever agent the next
@@ -104,7 +105,8 @@ explicitly, in `STATE.md` and to the user. A silently vanished
 reviewer is how review lapses for a dozen tasks unnoticed.
 
 Then check the base. `base:` in `STATE.md` is the target-branch commit
-of your last Acceptance dry runs. Fetch, and list the files that
+of your last Acceptance dry runs. It is not a task's `BASE`, which is
+the commit that one task started from. Fetch, and list the files that
 changed on the target branch since then (`git diff --name-only
 <base>..origin/<branch>`). A changed file in an unaccepted task's
 `Allowed` or `Read-only` list makes that spec stale. Repeat its
@@ -255,13 +257,15 @@ Expect: integer <= 100
 ## Budget
 40 turns. Stop and write Result if exceeded.
 ## Rules
-Commit before writing Result. No stubs, placeholders, or TODO bodies.
+Before your first edit, write `BASE: <git rev-parse HEAD>` in Result.
+Commit before writing Result, and write the commit's sha there. No
+stubs, placeholders, or TODO bodies.
 The Result section of this task file is always writable, even when the
 spec marks `.overseer/` read-only.
 Do not edit or skip tests to make Acceptance pass; report instead.
 Run every command in the foreground and do not end your turn while one
-runs: a backgrounded suite ends the turn with nothing committed (ux-05
-and ux-06).
+runs: a backgrounded suite ends the turn with nothing committed (seen
+in two runs).
 Search the repo before assuming something is missing.
 For every new test, name in Result the one-line change to the code
 under test that makes it fail, and say that you ran it. The change
@@ -277,175 +281,40 @@ mutated code (two consecutive runs, 2026-10).
 ## Verification      (overseer or verifier writes: captured output)
 ```
 
-Write `Acceptance` before spawning the implementer, never after. Then
-run every Acceptance command yourself at `BASE`, in the checkout the
-implementer will use, before dispatch. Each command's `Expect:` line
-says whether it must fail at `BASE` (a change check) or pass at
-`BASE` (a guard, e.g. the full suite); keep the `Command:`/`Expect:`
-line format, which the judge parses. A change check that already
-prints its Expect at `BASE`, or any command that errors for a reason
-other than the missing change, is a spec defect: fix the spec before
-dispatch. The dry run also exposes a miscounted number (a count that
-includes a trailing comma, a test file holding fewer tests than the
-spec says) before an implementer takes the blame (seen in runs
-judge-1 and fix-1). After a task that changes a shared gate (a lint
-rule, a test count, a schema) is accepted, re-read the Acceptance of
-every open task that runs that gate. An
-acceptance criterion you cannot express as a command with expected
-output is not concrete enough for a less capable model. Scope and
-clean-tree checks compare against the task's own commit (the
-implementer records `BASE` at step 0 and the fix sha at commit), never
-`HEAD`: the overseer's ledger commits land on top within minutes and
-turn every HEAD-based check into a false fail (seen in runs 046 and
-048). An acceptance command must fail when the thing it checks fails.
-A grep over `go test -v` output must allow Go's duration suffix:
-`--- PASS: TestName (0.00s)`, so end the pattern in ` \(`, never `$`
-(every task in one run had this defect). Put `set -o pipefail`
-in front of any pipeline: without it,
-`go test ./... | tail -5` exits 0 on a failed test. A count check
-written `test "$(cmd | grep -c X)" = N` discards cmd's exit status
-even under `pipefail`: capture the output, test the status, then the
-count (fieldcontent and live-findings, two runs). Assert an exit
-code against a built binary, never through a runner that rewrites it:
-`go run` turns every non-zero exit into 1 (seen in three runs). `python -m
-compileall` exits 0 on a path that does not exist, so it is not a
-change check for a new module; put `python -c "import <module>"` in
-front of it (mark-pass1 and edges-export, two runs).
-Vitest counts name files, not directories, unless the directory
-count was checked with `ls`. A full web suite run as a guard names its failing files
-(Vitest: `--reporter=json --outputFile.json=<log>`; `tail` of the
-default output names none) and, under another run's load, a longer
-`--testTimeout`; a failure is real only after a quiet rerun of that
-file (style-polish and app-01-addendum: three unexplained
-failing runs, one caused by a neighbour's mid-run merge). An overseer-owned acceptance script (a corpus checker, a diff
-limiter, a count) is run once on a known-good input and once on an
-injected fault before dispatch; it must pass the first and catch the
-second (fitness-app S4 and S5: three such scripts, each wrong
-on first run, two of them failing open). A spec that prescribes shell for a remote or privileged step (an
-install over `ssh` and `sudo`, a guard that decides whether to replace
-a file) lists every external tool the script calls and has a test with
-each tool missing and with each tool failing after it printed output; it
-opens no file with truncation and refuses a symbolic link where it
-creates one. The overseer's own template is the likeliest defect: in
-two consecutive runs (notes-api and notes-write) every blocking review
-finding on such a script was in text the overseer supplied "verbatim".
-Before a task edits a script, check whether a live timer or unit runs
-that file from the checkout; if one does, the first commit is a deploy
-(notes-write: an hourly publish failed for hours on a new default path).
-An overseer-owned smoke script gets a
-dry run of its navigation (login, reach the target screen) against the
-dev stack before dispatch: selectors guessed from code failed on first
-run in runs 050 and 052. A device (Android WebView) smoke script needs
-the whole script dry-run on an emulator, then once on the target phone,
-before Gate 3, and the schedule should budget for it: names, gestures,
-and the visible-only snapshot differ from the browser, so drafts failed
-for a dozen or more runs (F1 and F2a). Start swipes inside the screen
-away from its edges, because a gesture-nav phone reads an edge swipe as
-Back while a 3-button emulator does not (F2a). Such a script stops its server by listening
-port or process group, never `pkill -f`/`pgrep -f`: the pattern also
-matches the calling shell's command line and kills it (exit 144, two
-consecutive runs). Before a spec prescribes a test
-assertion or query option, copy the idiom from an existing test in the
-repo: jest-dom matchers (`toHaveAttribute`, `toBeDisabled`) and
-options like `exact` on `getByRole` are often absent or fail typecheck
-(runs phase-17 and nav-2). A test for one branch of an OR (a
-filter, a posture rule, a permission) needs a fixture that satisfies
-only that branch; a row that also satisfies another branch masks the
-branch's removal. A toggle test turns the control on from off, not only
-off from on (ux-04 and ux-05: four vacuous tests). A test
-asserts the value the rule requires, not that a value changed: a written
-timestamp is bracketed between clock reads taken around the request, a
-null field is checked after the status and the key's presence (indexing
-a missing key reads as null on an error body), and a link or token sent
-elsewhere is compared with the string actually sent, never one the test
-rebuilds (fitness-app S2 and S3: five such tests survived
-mutation). The rule in a brief is not enough: the task spec names the
-response helper every test reads through (one that asserts the status
-and the key's presence before returning the value), and the reviewer
-flags any field read outside it (fitness-app S4: seven more
-such tests in three tasks whose briefs carried the rule). An
-implementer reports a deviation from the spec in Result; it never
-decides one, not even with a marked comment in the code. A test of code that sends a request (a mock, a fake server) asserts the request it sent: the exact body, patch or parameters, not only that a call matched by method or id and that the parsed result looks right (mail-app unsub-header and optimistic: two runs where an id-only matcher let a wrong payload pass). A query that filters by owner (a user, tenant, or account id) is tested with a
-second owner's competing rows in every table it reads, and asserts the exact
-rows returned; otherwise deleting the owner predicate passes every test
-(fitness-app S6: two tasks, and the authz matrix did not catch it,
-because it checks who may call a route, not which rows come back). A wait in
-a test is a time deadline, never a count of polls, which a loaded machine
-exhausts early. A test of a filter that a lower layer also enforces (row-level
-security, a middleware, a foreign key) disables that layer in a
-rolled-back transaction, or the filter's removal passes unnoticed
-(ux-04 and app-01). A UI test that asserts after an
-asynchronous refresh must first wait for something the refresh
-visibly changes; otherwise it asserts on the pre-refresh DOM and
-passes whatever the refresh does (three of five tests that could not
-fail in run fix-1). The same holds for a first load: an absence check, a count of zero
-or a layout measurement waits for a positive marker of loaded data
-(a row known to exist) first, or it passes on a loading or error
-state (ux-05 and ux-coverage: an empty-state check and
-zoom measurements taken before the list arrived). A task that adds stateful UI (a form, a guard, a
-stale-read notice, a gate) lists its transitions as a table
-("state, event, next state"), including a second failure while
-already in the failure state, recovery, a remount, a second form
-opening over a dirty one, and an edit made while a save is in flight
-(runs 052 and fix-1 paid review rounds for missing rows). A task that
-acts later on something observed earlier (a queued notification, a
-deferred click, a pending confirmation, a timer) re-reads its target from
-the source of truth when it acts, and the spec names the identity checks
-for that moment (which device or account owns it, and a stable key rather
-than a reusable slot); keep that decision in code that takes the clock as
-an argument (two desktop-app runs paid review and critic rounds for this). A test that
-creates a privileged resource (a database role, an admin connection, a
-credential) registers its cleanup before it creates anything (run fix-1
-left 14 roles with a known password on a local Postgres). A
-task whose code or tests are gated by platform (`#[cfg(unix)]`,
-build tags, a Windows-only branch) is not accepted on local results
-alone: run the other platform's CI, or a cross-target lint, first. A
-Linux box cannot see an import used only under another `cfg`, or a
-CRLF checkout that changes fixture bytes; commit a `.gitattributes`
-that pins line endings before fixtures land (seen in multiplexer-driver
-run 2 and overseer-judge run 2). Before dispatch, grep the tests for whatever the spec changes and put
-every test that pins it in `Allowed`, with the one edit it needs: a
-whole-value comparison of a struct that gains a field, a class name
-the spec removes, a label an e2e spec selects by, and a golden list
-of every member of the set the spec adds to (routes, operation ids,
-tables) (four runs: app-01, style-polish, reviewer-eligibility,
-role-menus).
-Two tasks
-whose `Allowed` lists overlap are one task mis-partitioned, or they
-run serially.
-A grep a work list gives for a forbidden pattern is a lower bound, not
-the inventory: before planning, widen it to the other spellings of the
-same rule (an equality, a list `includes`, a `switch`, a set lookup)
-and put every hit in scope or in the report
-(app-01-addendum and assignee-eligibility: two runs missed role lists
-written as `includes`).
-Before the critic sees a spec, for every new function it names, state
-the empty input, the whitespace-only input, and the duplicated input
-and what each yields: in two consecutive runs (0.8.3
-and 0.8.4) every blocking critic finding was one of these left unsaid.
-A spec that keeps an in-run queue or cache keyed by a shared identifier
-(a company GUID, an alert id) lists every exit path of the per-record
-function, the early skips included, and says what each does to an
-entry an earlier record left under the same key (0.8.3 and
-0.9.0: the reviewer's blocking finding both times).
+Write `Acceptance` before spawning the implementer, never after.
+`BASE` is the commit a task starts from. Run every Acceptance command
+yourself at `BASE`, in the checkout the implementer will use, before
+dispatch. These rules apply to every task:
 
-An overseer-written black-box probe test (copied into the package by
-the task's Acceptance, never editable by the implementer) raises the
-judge's acceptance score and gives the verifier a contract independent
-of the implementer's tests. Its failure mode is the overseer's own
-reading of the behavioral contract: in two consecutive runs a probe
-asserted a value the contract did not support (a row count the
-original emitted twice; path assertions that ignored URL
-normalization), and the implementer was blocked until the probe was
-corrected. Have the plan critic check every probe's expected values
-against the behavioral source, not only its compilation, before Gate 1,
-and treat a probe failure the implementer reports with a reproduction
-from the original as a probe defect first.
+- Each command's `Expect:` line says whether the command must fail at
+  `BASE` (a change check) or pass at `BASE` (a guard, e.g. the full
+  suite). Keep the `Command:`/`Expect:` line format, which the judge
+  parses.
+- A change check that already prints its Expect at `BASE`, or any
+  command that errors for a reason other than the missing change, is
+  a spec defect: fix the spec before dispatch.
+- An acceptance criterion you cannot express as a command with
+  expected output is not concrete enough for a less capable model.
+- An acceptance command must fail when the thing it checks fails.
+- Scope and clean-tree checks compare against the task's own commit,
+  never `HEAD`. The implementer records `BASE` in `Result` before its
+  first edit, and the fix sha at commit. The overseer's ledger commits
+  land on top within minutes and turn every HEAD-based check into a
+  false fail (seen in two runs).
+- After a task that changes a shared gate (a lint rule, a test count,
+  a schema) is accepted, re-read the Acceptance of every open task
+  that runs that gate.
+- Two tasks whose `Allowed` lists overlap are one task
+  mis-partitioned, or they run serially.
+- An implementer reports a deviation from the spec in Result; it
+  never decides one, not even with a marked comment in the code.
 
-A task carrying arbitrary user JSON states its numeric precision contract.
-Check a large integer and a precise decimal through the actual transport
-and stored record, plus an unrelated UI edit. Fields the person did not
-change stay out of the patch; typed decoding can otherwise rewrite them.
+Then read `resources/spec-pitfalls.md`, before you plan. It holds
+the specific traps, grouped by the kind of task: shell traps in
+acceptance commands, scope, what a spec must state, tests that cannot
+fail, and the scripts you supply. Most cost a run a review round or a
+false accept. Check every task file against the groups that apply to
+it. A task file written without that file is a spec defect.
 
 ## Review file
 
@@ -507,7 +376,9 @@ item as unanswered.
 
 ## Workflow
 
-1. **Startup check.** Read every lease in `.overseer/active/`. For
+1. **Startup check.** First finish Preconditions and roster: load
+   the driver, verify overseer mode, load the roster. Then read every
+   lease in `.overseer/active/`. For
    each, tell the user the run id, harness, age, and claims; never
    remove one, stale or not. Then write your own lease. Another lease
    means a worktree for every implementer, whatever `list()` shows,
@@ -515,7 +386,8 @@ item as unanswered.
    user's approval. `list()` sees one harness; the lease is how two
    overseers on different harnesses find each other. Then read the
    local rules file (under Lessons), if it exists.
-2. **Recon and plan.** Explore the repo cheaply yourself (this is
+2. **Recon and plan.** Read `resources/spec-pitfalls.md` first.
+   Explore the repo cheaply yourself (this is
    reading, not implementing). Write `PLAN.md`: task breakdown, each
    task with explicit file paths and acceptance criteria concrete
    enough for a less capable model. No ambiguity — implementers execute
@@ -528,13 +400,12 @@ item as unanswered.
    cardinalities (0, 1 and 2 of every account, identity, member or
    row) and for one value that is two things at once (an address that
    is both an identity and an alias, in one account and across two):
-   those were the critic's best catches in two consecutive runs
-   (mail-app unified, mail-app masked). Also ask the critic to recompute
+   those were the critic's best catches in two consecutive runs.
+   Also ask the critic to recompute
    every expected value and event sequence the task files prescribe,
    working from the rule as written rather than checking that the
-   tests compile. In two consecutive runs (mail-app masked, mail-app
-   replyto), one of the overseer's hand-derived expectations was
-   wrong. Fix the spec, then retire it. With
+   tests compile. In two consecutive runs, one of the overseer's
+   hand-derived expectations was wrong. Fix the spec, then retire it. With
    a judge on the roster, lint each task file with it first
    (`resources/judge.md`). The critic then starts from cleaner specs.
 4. **Gate 1: user approves the plan.** Do not spawn implementers
@@ -559,8 +430,7 @@ item as unanswered.
    implementer as a spec-referenced defect. Run the verifier after the
    reviewer's mutation pass, never alongside it, and keep implementers'
    suites off the box while it runs. Under shared load, timeouts and
-   timing checks fail spuriously; three runs paid for re-runs
-   (ux-01, ux-03, frameworks).
+   timing checks fail spuriously; three runs paid for re-runs.
 8. **Review rounds** (if reviewer enabled), per the loop below.
 9. **Gate 3: final acceptance.** Repeat the base check from On
    resume. Check the whole product against
@@ -588,7 +458,7 @@ ready, how to deliver the task, and how to confirm the task took.
 Never assume a dispatch took. Then, for every dispatch:
 
 1. After editing a task file, read the task file back and confirm the
-   edit landed before sending the nudge (twice in run fix-1 a
+   edit landed before sending the nudge (twice in one run a
    scripted replace failed after the nudge went out and the
    implementer read the old spec).
 2. After any wait returns, check the artifact before the status: task
@@ -733,14 +603,14 @@ the mutation; after the fix the unmutated test passes and the
 mutated run fails on the test's own assertion. Reviewer probes and
 mutation scripts usually hard-code the reviewer's scratch checkout and
 port: repoint them to a disposable checkout of the fix commit before
-replaying (ux-01 and ux-02). A probe that now fails only
+replaying (seen in two runs). A probe that now fails only
 because the fix legitimately added a second match (a hidden duplicate
 element) is adapted to count visible matches, and the adaptation is
 recorded. Print the diff of every replay mutation and check it is
 non-empty before the run: a `sed` that matches nothing (a call that
 spans two lines, a guessed variable name) leaves the code unmutated,
-and the passing run proves nothing (ux-04, ux-05 and
-ux-coverage, three misses in one run). Record the captured
+and the passing run proves nothing (three misses in one run).
+Record the captured
 output in the task's `Verification` as "verified by overseer,
 round-N repro", and set the item's `- status:` to `resolved` in the
 round file (add no other line to the round file). `last reviewed:`
@@ -758,8 +628,9 @@ review file and fix the task file before the implementer touches code.
 
 ## Human-in-the-loop points
 
-Exactly three: plan approval before implementation, a deadlock you
-cannot settle, final acceptance. Everything else is yours to decide.
+Exactly three: plan approval before implementation (Gate 1), a
+deadlock you cannot settle (Gate 2, as often as one occurs), final
+acceptance (Gate 3). Everything else is yours to decide.
 Announce each through `notify`, if your harness offers it, so the
 user is not the monitor; if it doesn't, announce it the way your
 driver gives, or failing that directly in your own reply. Reserve whatever "urgent" signal `notify` offers for
