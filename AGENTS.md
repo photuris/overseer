@@ -17,6 +17,11 @@ directly.
   CLI, which implements the mapping deterministically instead of
   leaving it to LLM prose. `judge.md` documents the optional judge role, backed by
   [overseer-judge][judge].
+- `resources/spec-pitfalls.md` — the rules that apply to one kind of
+  task, grouped by kind. `SKILL.md` tells the overseer to read it
+  before it writes a task file. A rule that applies to every task
+  stays in `SKILL.md`. A new rule for one kind of task goes here, in
+  the group it fits.
 - `resources/t3.md` — the T3 Code driver. Unlike `tmux.md` and
   `herdr.md`, it uses no CLI: the overseer runs as a T3 thread and
   calls T3's orchestrator MCP tools directly.
@@ -57,9 +62,9 @@ A run never writes a lesson into this skill. It appends to
 `.overseer/LESSONS.md` in the repository it worked on, and promotes a
 repeated friction to the user's local rules file
 (`~/.config/overseer/rules.md`). A rule moves from that file into
-`SKILL.md` only by a commit here, written by hand: remove project
-names, client names, and run ids that mean nothing to a stranger
-first.
+`SKILL.md` or `resources/spec-pitfalls.md` only by a commit here,
+written by hand: remove project names, client names, and run ids that
+mean nothing to a stranger first.
 
 ## Conventions
 
