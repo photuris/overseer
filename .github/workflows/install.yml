@@ -18,22 +18,37 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+    env:
+      SKILL: ~/.claude/skills/overseer
+      PROFILES: ~/.config/overseer/profiles.toml
     steps:
       - uses: actions/checkout@v4
-      - name: all three, piped as the README shows
+      - name: default run, piped as the README shows
         run: sh -s < install.sh
-      - name: binaries run
+      - name: driver, launcher, skill, and profile file are there; the judge is not
         run: |
           ~/.local/bin/multiplexer-driver --version
-          ~/.local/bin/overseer-judge --version
           ~/.local/bin/overseer --version
+          test ! -e ~/.local/bin/overseer-judge
+          test -f ${{ env.SKILL }}/SKILL.md
+          test -f ${{ env.PROFILES }}
+      - name: second run adds the judge and keeps the skill and the profile file
+        run: |
+          echo '# marker' >> ${{ env.PROFILES }}
+          echo marker > ${{ env.SKILL }}/marker
+          sh install.sh --with-judge
+          ~/.local/bin/overseer-judge --version
+          grep -q '^# marker$' ${{ env.PROFILES }}
+          test -f ${{ env.SKILL }}/marker
       - name: skip flags install only the driver
         run: |
-          rm -rf ~/.local/bin
-          sh install.sh --no-judge --no-launch
+          rm -rf ~/.local/bin ${{ env.SKILL }} ${{ env.PROFILES }}
+          sh install.sh --no-launch --no-skill
           test -x ~/.local/bin/multiplexer-driver
           test ! -e ~/.local/bin/overseer-judge
           test ! -e ~/.local/bin/overseer
+          test ! -e ${{ env.SKILL }}
+          test ! -e ${{ env.PROFILES }}
       - name: unknown option is exit 2
         run: |
           code=0; sh install.sh --bogus || code=$?
@@ -47,23 +62,41 @@ jobs:
         shell: powershell
     steps:
       - uses: actions/checkout@v4
-      - name: all three, through iex as the README shows
+      - name: default run, through iex as the README shows
         run: Get-Content install.ps1 -Raw | Invoke-Expression
-      - name: binaries run
+      - name: driver, launcher, skill, and profile file are there; the judge is not
         run: |
           $bin = Join-Path $HOME '.local\bin'
           & "$bin\multiplexer-driver.exe" --version
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          & "$bin\overseer-judge.exe" --version
-          if ($LASTEXITCODE -ne 0) { exit 1 }
           & "$bin\overseer.exe" --version
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (Test-Path "$bin\overseer-judge.exe") { exit 1 }
+          if (-not (Test-Path "$HOME\.claude\skills\overseer\SKILL.md")) { exit 1 }
+          if (-not (Test-Path "$env:APPDATA\overseer\profiles.toml")) { exit 1 }
+      - name: second run adds the judge and keeps the skill and the profile file
+        run: |
+          $bin = Join-Path $HOME '.local\bin'
+          $skill = "$HOME\.claude\skills\overseer"
+          $profiles = "$env:APPDATA\overseer\profiles.toml"
+          Add-Content $profiles '# marker'
+          Set-Content "$skill\marker" 'marker'
+          powershell -ExecutionPolicy Bypass -File install.ps1 -WithJudge
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & "$bin\overseer-judge.exe" --version
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (-not (Select-String -Path $profiles -Pattern '^# marker$' -Quiet)) { exit 1 }
+          if (-not (Test-Path "$skill\marker")) { exit 1 }
       - name: skip flags install only the driver
         run: |
           $bin = Join-Path $HOME '.local\bin'
-          Remove-Item -Recurse -Force $bin
-          powershell -ExecutionPolicy Bypass -File install.ps1 -NoJudge -NoLaunch
+          $skill = "$HOME\.claude\skills\overseer"
+          $profiles = "$env:APPDATA\overseer\profiles.toml"
+          Remove-Item -Recurse -Force $bin, $skill, $profiles
+          powershell -ExecutionPolicy Bypass -File install.ps1 -NoLaunch -NoSkill
           if ($LASTEXITCODE -ne 0) { exit 1 }
           if (-not (Test-Path "$bin\multiplexer-driver.exe")) { exit 1 }
           if (Test-Path "$bin\overseer-judge.exe") { exit 1 }
           if (Test-Path "$bin\overseer.exe") { exit 1 }
+          if (Test-Path $skill) { exit 1 }
+          if (Test-Path $profiles) { exit 1 }
