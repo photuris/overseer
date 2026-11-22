@@ -15,7 +15,10 @@ directly.
   abstract interface onto that harness's real commands. `tmux.md`,
   `herdr.md`, `hc.md`, `cmux.md`, and `tuios.md` point at the [multiplexer-driver][driver]
   CLI, which implements the mapping deterministically instead of
-  leaving it to LLM prose. `judge.md` documents the optional judge role, backed by
+  leaving it to LLM prose. `cmux.md` and `tuios.md` are experimental:
+  each has a note at its top, and the README's Harnesses table gives
+  every harness a status. Move one to supported only after full runs
+  on it, and change the note and the table together. `judge.md` documents the optional judge role, backed by
   [overseer-judge][judge].
 - `resources/spec-pitfalls.md` — the rules that apply to one kind of
   task, grouped by kind. `SKILL.md` tells the overseer to read it
