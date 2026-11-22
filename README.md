@@ -33,8 +33,11 @@ overseer decides everything else and tells you what it decided.
 
 ## What a run leaves behind
 
-A run writes one folder in your repository. The names below are made
-up; the layout and the formats are the real ones.
+A run writes one folder in your repository. Git ignores it by
+default: the overseer adds `.overseer/` to `.git/info/exclude`, a
+local file, so your `.gitignore` does not change. To keep the folder
+in history, tell the overseer at the start of a run. The names below
+are made up; the layout and the formats are the real ones.
 
 ```
 .overseer/
