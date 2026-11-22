@@ -47,10 +47,69 @@ commands, in place of setting the roster variables by hand:
 
 ## Install
 
-Four pieces: the skill, the driver (required), the judge (optional),
-and the session launcher (optional). Each is one copy-paste command,
-and one setup script installs the three binaries together. No
-toolchain is needed: the binaries are prebuilt.
+One command installs the driver and the session launcher, clones the
+skill, and writes an example profile file. No toolchain is needed: the
+binaries are prebuilt.
+
+**Linux and macOS:**
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/photuris/overseer/main/install.sh | sh
+```
+
+**Windows** (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/photuris/overseer/main/install.ps1 | iex"
+```
+
+The script does three things:
+
+1. It installs `multiplexer-driver` and `overseer` in `~/.local/bin`
+   (`%USERPROFILE%\.local\bin` on Windows).
+2. It clones the skill into `~/.claude/skills/overseer` for Claude
+   Code, into `~/.agents/skills/overseer` for Codex, or into both. It
+   uses the agents it finds on the machine, and Claude Code when it
+   finds none.
+3. It writes the example profile file to
+   `~/.config/overseer/profiles.toml`
+   (`%APPDATA%\overseer\profiles.toml` on Windows).
+
+The script does not change a skill directory or a profile file that
+already exists. Run it again to update the binaries.
+
+### First run
+
+1. Open a new terminal if an installer added `~/.local/bin` to your
+   `PATH`.
+2. Edit the profile file. Keep the profiles whose agent commands you
+   have, and set `default` to one of them.
+   [The session launcher](#4-the-session-launcher-optional) describes
+   the format.
+3. If the overseer runs as Claude Code in auto mode, add the two allow
+   rules that the script printed. See
+   [Claude Code in auto mode](#claude-code-in-auto-mode-allow-the-spawn-commands).
+4. Start tmux, or open a Herdr pane, and run `overseer`.
+5. Give the overseer an implementation task. It loads the skill, writes
+   a plan, and waits for your approval before it starts an implementer.
+
+### Options
+
+| `install.sh` | `install.ps1` | Effect |
+|--------------|---------------|--------|
+| `--with-judge` | `-WithJudge` | Also installs `overseer-judge`. The judge needs a TypeSafe API key, and it sends pane, task, and review text to that API. Add `judge = "overseer-judge"` to a profile to use it. |
+| `--no-launch` | `-NoLaunch` | Skips the launcher and the profile file. You then set the roster variables by hand. |
+| `--no-skill` | `-NoSkill` | Skips the skill clone. |
+
+The piped form takes the same options: `... | sh -s -- --with-judge`.
+On Windows, run the script from a clone of this repository:
+`powershell -ExecutionPolicy Bypass -File install.ps1 -WithJudge`.
+
+## Manual install
+
+The setup script runs the steps below. Use them to install one piece
+by hand, or to see what the script does.
+
 
 ### 1. The skill itself
 
@@ -82,37 +141,6 @@ Restart the harness (or start a new session) if it doesn't pick the
 skill up immediately.
 
 [agentskills]: https://agentskills.io
-
-### All three binaries at once
-
-The setup script in this repository runs the installers from steps 2
-to 4 in turn and prints the versions. Use it in place of those steps.
-
-**Linux and macOS:**
-
-```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/photuris/overseer/main/install.sh | sh
-```
-
-**Windows** (PowerShell):
-
-```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/photuris/overseer/main/install.ps1 | iex"
-```
-
-The binaries go in `~/.local/bin` (`%USERPROFILE%\.local\bin` on
-Windows). If an installer added that directory to your `PATH`, open a
-new terminal before you use them.
-
-To skip an optional binary, run the script from your clone of the
-skill with a flag: `sh install.sh --no-judge` or `--no-launch`, and on
-Windows `powershell -ExecutionPolicy Bypass -File install.ps1
--NoJudge` or `-NoLaunch`. The piped form takes the same flags:
-`... | sh -s -- --no-judge`.
-
-The script does not install the skill (step 1) and does not write a
-profile file. With the launcher installed, run `overseer init` next,
-as step 4 describes.
 
 ### 2. The driver (required)
 
