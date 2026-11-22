@@ -132,8 +132,11 @@ already exists. Run it again to update the binaries.
 
 1. Open a new terminal if an installer added `~/.local/bin` to your
    `PATH`.
-2. Edit the profile file. Keep the profiles whose agent commands you
-   have, and set `default` to one of them.
+2. Edit the profile file. Set `default` to a profile whose agents you
+   have: `claude` needs Claude Code and Codex, and `claude-only` needs
+   Claude Code alone. An implementer and a reviewer must edit files
+   and run tests without asking you, so add your agent's flag for that
+   if it asks by default. The file says how.
    [The session launcher](#4-the-session-launcher-optional) describes
    the format.
 3. If the overseer runs as Claude Code in auto mode, add the two allow
@@ -142,9 +145,9 @@ already exists. Run it again to update the binaries.
    (`tmux`, `herdr`, `hc`). See
    [Claude Code in auto mode](#claude-code-in-auto-mode-allow-the-spawn-commands).
 4. Start tmux, or open a Herdr pane, and run `overseer`.
-5. Under tmux, tell the agent that overseer mode is on: type
-   `/overseer`, or "Load the overseer skill". Under Herdr the launcher
-   marks the session itself.
+5. The overseer loads the skill and checks the roster, because each
+   example profile starts it with a prompt. If you removed that
+   prompt and you are under tmux, type `/overseer` yourself.
 6. Give the overseer an implementation task. It writes a plan and
    waits for your approval before it starts an implementer.
 
@@ -393,23 +396,21 @@ pinned model, never a shell alias. `overseer <name>` launches one;
 `overseer` alone launches the file's `default`; `overseer <name>
 --print` shows what would launch.
 
-To have the overseer load this skill at launch, instead of when the
-first implementation task arrives, end the profile's `overseer`
-command with a starting prompt. `claude`, `codex`, and `pi` all take
-one as a trailing argument:
+Each example profile ends its `overseer` command with a starting
+prompt, so the overseer loads this skill at launch, not when the
+first implementation task arrives. `claude`, `codex`, and `pi` all
+take one as a trailing argument:
 
 ```toml
 [profiles.claude]
-overseer = "claude 'Load the overseer skill and confirm the roster.'"
+overseer = "claude --model claude-fable-5-2 \"/overseer\""
 ```
 
-On Windows the command runs under `cmd /C`, where single quotes do
-not quote: write `\"` around the prompt inside the TOML string.
-
-Claude Code also takes the slash command there, `claude '/overseer'`;
-use the sentence if your version shows it as plain text. The agent
-takes one paid turn at startup and the roster check runs before you
-type a task. The
+The escaped double quotes work under both `sh` and Windows `cmd`. If
+your version of Claude Code shows `/overseer` as plain text, use a
+sentence: `\"Load the overseer skill and confirm the roster.\"` The
+agent takes one paid turn at startup and the roster check runs before
+you type a task. Remove the prompt to load the skill later. The
 [launcher README](https://github.com/photuris/overseer-launch#loading-the-skill-at-startup)
 has the other agents and a lighter system-prompt variant.
 
