@@ -16,6 +16,12 @@ below exist because the driver does not wrap them.
 
 [md]: https://github.com/photuris/multiplexer-driver
 
+**Version.** This file is written for multiplexer-driver 0.5.0 or
+later. Run `multiplexer-driver --version` before any other driver
+command. If the version is lower, or the command is not found, stop.
+Tell the user to run the install script again (the README's Install
+section).
+
 Set `MULTIPLEXER_DRIVER_HARNESS=tuios` once per shell to drop
 `--harness tuios` from every call; the commands below spell it out.
 Inside a tuios pane the driver talks to that pane's session; from
