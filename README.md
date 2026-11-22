@@ -13,22 +13,28 @@ that interface onto real commands.
 
 ## Harnesses
 
-| Harness | Driver |
-|---------|--------|
-| tmux | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| Herdr | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| Herdr desktop app (hc) | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| cmux (macOS) | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| tuios | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
-| T3 Code (0.1.1+) | T3 orchestrator MCP tools ([`resources/t3.md`](resources/t3.md)) |
+| Harness | Status | Platforms | Driver |
+|---------|--------|-----------|--------|
+| tmux | Supported | Linux, macOS | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| Herdr | Supported | Linux, macOS, Windows | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| Herdr desktop app (hc) | Supported | Linux, macOS, Windows | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| T3 Code (0.1.1+) | Supported | Where T3 Code runs | T3 orchestrator MCP tools ([`resources/t3.md`](resources/t3.md)) |
+| cmux | Experimental | macOS | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+| tuios | Experimental | Linux (the only one tested) | [multiplexer-driver](https://github.com/photuris/multiplexer-driver) |
+
+- **Supported:** the maintainer runs real sessions on this harness. A
+  problem with it is a bug, so report it.
+- **Experimental:** the driver was checked against one version of the
+  harness and has had little use in full runs. It can fail in ways
+  the driver file does not describe. Reports are welcome, with no
+  promise of a fix.
+
+If you are new, start with tmux or Herdr.
 
 `multiplexer-driver` is a small CLI that implements the deterministic
 half of the mapping (the actual commands), so the skill itself only
-needs to carry the judgment calls an LLM has to make. It runs on Linux
-and macOS for tmux and Herdr, on macOS for cmux, on Linux for tuios
-(the only platform tested), and on Windows for Herdr. The Herdr
-desktop app (hc, driver `resources/hc.md`) runs on Linux, macOS, and
-Windows. See Install below.
+needs to carry the judgment calls an LLM has to make. See Install
+below.
 
 An optional judge role — typed verdicts on pane state, task-file
 lint, and review classification — is documented in
@@ -41,7 +47,7 @@ commands, in place of setting the roster variables by hand:
 
 | Binary | Needed | Role |
 |--------|--------|------|
-| [`multiplexer-driver`](https://github.com/photuris/multiplexer-driver) | required for tmux, Herdr, cmux, and tuios | runs the harness commands |
+| [`multiplexer-driver`](https://github.com/photuris/multiplexer-driver) | required for every harness except T3 Code | runs the harness commands |
 | [`overseer-judge`](https://github.com/photuris/overseer-judge) | optional | typed verdicts for the judge role |
 | [`overseer`](https://github.com/photuris/overseer-launch) | optional | starts a session from a profile |
 
