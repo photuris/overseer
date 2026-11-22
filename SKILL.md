@@ -225,7 +225,23 @@ Review findings are individually addressable items with a stable ID
 under the item they answer, in the layout under Review file. One
 disputed item never blocks items already settled.
 
-Ledger commits stage the ledger by path (`git add .overseer`), never
+The ledger stays out of git unless the user wants it in history. At
+the startup check, test both of these:
+
+```bash
+git check-ignore -q .overseer/x && echo ignored
+test -n "$(git ls-files .overseer)" && echo tracked
+```
+
+Neither printed: add the line `.overseer/` to the file that
+`git rev-parse --git-path info/exclude` names. That file is local to
+the clone, and every worktree shares it, so the repository's
+`.gitignore` does not change. Do not add the line when the user asked
+for the ledger in history.
+
+`tracked` printed, or the user asked for the ledger in history:
+commit the ledger as you work. Ledger commits stage the ledger by
+path (`git add .overseer`), never
 `git commit -a`: in a shared checkout `-a` sweeps an implementer's
 uncommitted work into your commit (seen in one run).
 
@@ -301,7 +317,7 @@ dispatch. These rules apply to every task:
 - An acceptance command must fail when the thing it checks fails.
 - Scope and clean-tree checks compare against the task's own commit,
   never `HEAD`. The implementer records `BASE` in `Result` before its
-  first edit, and the fix sha at commit. The overseer's ledger commits
+  first edit, and the fix sha at commit. The overseer's own commits
   land on top within minutes and turn every HEAD-based check into a
   false fail (seen in two runs).
 - After a task that changes a shared gate (a lint rule, a test count,
@@ -387,8 +403,10 @@ item as unanswered.
    means a worktree for every implementer, whatever `list()` shows,
    and a resource another lease claims is touched only with the
    user's approval. `list()` sees one harness; the lease is how two
-   overseers on different harnesses find each other. Then read the
-   local rules file (under Lessons), if it exists.
+   overseers on different harnesses find each other. Before you
+   write the lease, make sure git ignores the ledger (Filesystem
+   protocol). Then read the local rules file (under Lessons), if it
+   exists.
 2. **Recon and plan.** Read `resources/spec-pitfalls.md` first.
    Explore the repo cheaply yourself (this is
    reading, not implementing). Write `PLAN.md`: task breakdown, each
