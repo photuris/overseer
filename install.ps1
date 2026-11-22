@@ -148,11 +148,19 @@ if (-not $NoLaunch) {
     Write-Host "  2. Edit ${profiles}: keep the agent commands you have."
     Write-Host '  3. Inside a Herdr pane, run: overseer'
 } else {
-    Write-Host '  2. Set OVERSEER_IMPLEMENTER and OVERSEER_REVIEWER, then start your agent'
-    Write-Host '     inside a Herdr pane.'
+    Write-Host '  2. Set OVERSEER_IMPLEMENTER, OVERSEER_REVIEWER, and HERDR_OVERSEER=1,'
+    Write-Host '     then start your agent inside a Herdr pane.'
 }
 Write-Host ''
 Write-Host 'If the overseer runs as Claude Code in auto mode, add these to'
 Write-Host 'permissions.allow in ~/.claude/settings.json before the first run:'
 Write-Host "  `"Bash(multiplexer-driver --harness $harness pane spawn:*)`","
 Write-Host "  `"Bash(multiplexer-driver --harness $harness pane split:*)`""
+Write-Host "They name the harness of this terminal ($harness). For the other one,"
+Write-Host 'change the name: herdr or hc.'
+
+if (-not (Get-Command jq -ErrorAction SilentlyContinue)) {
+    Write-Host ''
+    Write-Host 'Note: jq was not found. The driver files use it. Install jq before'
+    Write-Host 'the first run.'
+}
