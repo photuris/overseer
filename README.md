@@ -24,6 +24,9 @@ pass". The skill is built around the ways that report is wrong.
 | The session restarts and its context is gone | The plan, each task, each review round, and the run state are files in `.overseer/`. A new session reads them and continues. |
 | Two runs collide in one repository | Each run holds a lease that names what it will change. |
 
+The plan critic and the review rows need a reviewer in your profile.
+The example profiles have one.
+
 You decide at three points: you approve the plan, you settle a
 deadlock the overseer cannot settle, and you accept the result. The
 overseer decides everything else and tells you what it decided.
@@ -91,8 +94,9 @@ verdict: changes
 ## Install
 
 One command installs the driver and the session launcher, clones the
-skill, and writes an example profile file. No toolchain is needed: the
-binaries are prebuilt.
+skill, and writes an example profile file. The binaries are prebuilt,
+so no compiler is needed. You need `git`, `curl`, and `jq`. The
+driver files use `jq` in their commands.
 
 **Linux and macOS:**
 
@@ -130,11 +134,24 @@ already exists. Run it again to update the binaries.
    [The session launcher](#4-the-session-launcher-optional) describes
    the format.
 3. If the overseer runs as Claude Code in auto mode, add the two allow
-   rules that the script printed. See
+   rules that the script printed. The script names the harness of the
+   terminal it ran in. Change the name if you will use another
+   (`tmux`, `herdr`, `hc`). See
    [Claude Code in auto mode](#claude-code-in-auto-mode-allow-the-spawn-commands).
 4. Start tmux, or open a Herdr pane, and run `overseer`.
-5. Give the overseer an implementation task. It loads the skill, writes
-   a plan, and waits for your approval before it starts an implementer.
+5. Under tmux, tell the agent that overseer mode is on: type
+   `/overseer`, or "Load the overseer skill". Under Herdr the launcher
+   marks the session itself.
+6. Give the overseer an implementation task. It writes a plan and
+   waits for your approval before it starts an implementer.
+
+**T3 Code** needs no driver and no launcher. Clone the skill
+([Manual install](#manual-install), step 1). Copy
+[`resources/t3.example.toml`](resources/t3.example.toml) to
+`~/.config/overseer/t3.toml` and edit it. Then type
+`/overseer <profile>` in a T3 thread. The overseer needs `python3`
+3.11 or later to read that file. [`resources/t3.md`](resources/t3.md)
+has the details.
 
 ### Options
 
@@ -177,7 +194,7 @@ If you are new, start with tmux or Herdr.
 `multiplexer-driver` is a small CLI that implements the deterministic
 half of the mapping (the actual commands), so the skill itself only
 needs to carry the judgment calls an LLM has to make. See Install
-below.
+above.
 
 An optional judge role — typed verdicts on pane state, task-file
 lint, and review classification — is documented in
@@ -245,7 +262,7 @@ harness you drive agents through. Install the prebuilt binary:
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/photuris/multiplexer-driver/releases/latest/download/multiplexer-driver-installer.sh | sh
 ```
 
-**Windows** (PowerShell; Herdr only):
+**Windows** (PowerShell; Herdr and the Herdr desktop app only):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -c "irm https://github.com/photuris/multiplexer-driver/releases/latest/download/multiplexer-driver-installer.ps1 | iex"
@@ -383,6 +400,9 @@ one as a trailing argument:
 overseer = "claude 'Load the overseer skill and confirm the roster.'"
 ```
 
+On Windows the command runs under `cmd /C`, where single quotes do
+not quote: write `\"` around the prompt inside the TOML string.
+
 Claude Code also takes the slash command there, `claude '/overseer'`;
 use the sentence if your version shows it as plain text. The agent
 takes one paid turn at startup and the roster check runs before you
@@ -401,7 +421,8 @@ it tells you the driver is too old, run the install script again.
 Releases of the skill are git tags, listed on the
 [releases page](https://github.com/photuris/overseer/releases). The
 install script gives you the newest commit. To stay on one release,
-clone it by tag:
+clone it by tag. The clone needs an empty destination, so run the
+install script with `--no-skill`, or remove the directory first:
 
 ```sh
 git clone --depth 1 --branch <tag> https://github.com/photuris/overseer ~/.claude/skills/overseer

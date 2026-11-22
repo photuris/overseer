@@ -45,7 +45,8 @@ multiplexer-driver --harness <harness> pane read <handle> --lines 60 --ansi \
   | $OVERSEER_JUDGE session --input - --agent <kind>
 ```
 
-On hc, omit `--ansi` (unsupported; hc strips escape codes).
+On hc and cmux, omit `--ansi` (unsupported there; hc strips escape
+codes).
 
 `<kind>` is `claude`, `codex`, `pi`, `opencode`, or `unknown`. The
 output has `state`, `confidence`, `input_line` (what sits in the
@@ -177,7 +178,7 @@ $OVERSEER_JUDGE session --input .overseer/runs/<run-id>/judge/003-impl-idle-vs-w
   --agent <kind> > .overseer/runs/<run-id>/judge/003-impl-idle-vs-working.json
 ```
 
-On hc, omit `--ansi` here too (hc strips escape codes).
+On hc and cmux, omit `--ansi` here too.
 
 Name the file for what you saw against what it said. Also save the
 capture whenever you judge a pane degraded yourself, judge or no

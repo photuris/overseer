@@ -168,10 +168,18 @@ if [ "$launch" = 1 ]; then
     echo "  3. Inside tmux or Herdr, run: overseer"
 else
     echo "  2. Set OVERSEER_IMPLEMENTER and OVERSEER_REVIEWER, then start your agent"
-    echo "     inside tmux or Herdr."
+    echo "     inside tmux or Herdr. Under Herdr, set HERDR_OVERSEER=1 too."
 fi
 echo
 echo "If the overseer runs as Claude Code in auto mode, add these to"
 echo "permissions.allow in ~/.claude/settings.json before the first run:"
 echo "  \"Bash(multiplexer-driver --harness $harness pane spawn:*)\","
 echo "  \"Bash(multiplexer-driver --harness $harness pane split:*)\""
+echo "They name the harness of this terminal ($harness). For another one,"
+echo "change the name: tmux, herdr, or hc."
+
+if ! command -v jq >/dev/null 2>&1; then
+    echo
+    echo "Note: jq was not found. The driver files use it. Install jq before"
+    echo "the first run."
+fi

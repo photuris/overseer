@@ -33,7 +33,9 @@ test "${HERDR_ENV:-}" = 1 && test "${HERDR_OVERSEER:-}" = 1
 
 `HERDR_ENV=1` means you are running inside Herdr at all; `HERDR_OVERSEER=1`
 means this session is the overseer for the current run. Both must be
-set before you orchestrate anything.
+set before you orchestrate anything. If `HC_TERMINAL_ID` is also set,
+you are in the Herdr desktop app: use `resources/hc.md`, not this
+file.
 
 ## Primitive mapping
 
@@ -201,7 +203,7 @@ line. Clear the input first, then send both ctrl+c presses about 0.3 s
 apart; at 0.7 s or more the second press sometimes lands outside the
 exit window. Address the pane id, not the agent name.
 `herdr agent send-keys <name>` has returned ok without reaching the pane
-(seen in runs 053 and 054).
+(seen in two runs).
 
 ```bash
 herdr pane send-keys wF:pA ctrl+u; sleep 0.4

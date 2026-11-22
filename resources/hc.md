@@ -166,7 +166,7 @@ seen 2026-11-02). `hc --skill` names Codex and pi as reporters, but
 this run did not probe them: for either, check `pane status` before
 trusting it, and pass `--patterns` if it stays `unknown`.
 
-Codex sessions in practice (edges-export, 2026-11-09): a
+Codex sessions in practice (one run, 2026-11-09): a
 Codex critic spawned with `-a on-request` blocked on an approval prompt
 the first time its sandbox refused something routine (uv's cache lock),
 and the Claude auto-mode classifier denied `hc keys <handle> enter` for
@@ -206,7 +206,7 @@ races eat first prompts on most harnesses. For each dispatch:
    hc keys <handle> enter        # cursor already on "yes"
    ```
 
-   Codex in a repo with Claude hooks (graphify) opens "Hooks need
+   Codex in a repo with Claude hooks opens "Hooks need
    review" first: `hc keys <handle> down down enter` picks "Continue
    without trusting", which a reviewer or critic does not need (seen
    in two consecutive runs). Under `-s workspace-write` it also
