@@ -10,6 +10,12 @@ CLI already found and fixed.
 
 [md]: https://github.com/photuris/multiplexer-driver
 
+**Version.** This file is written for multiplexer-driver 0.5.0 or
+later. Run `multiplexer-driver --version` before any other driver
+command. If the version is lower, or the command is not found, stop.
+Tell the user to run the install script again (the README's Install
+section).
+
 Unlike Herdr, tmux has no concept of "agent" — only sessions, windows,
 panes, and the text inside them — so `status` is a best-effort
 approximation, not a lookup. Every other primitive is a thin, tested
