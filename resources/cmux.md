@@ -15,6 +15,12 @@ improvise `cmux` syntax beyond what this file documents; the few raw
 
 [md]: https://github.com/photuris/multiplexer-driver
 
+**Version.** This file is written for multiplexer-driver 0.5.0 or
+later. Run `multiplexer-driver --version` before any other driver
+command. If the version is lower, or the command is not found, stop.
+Tell the user to run the install script again (the README's Install
+section).
+
 Set `MULTIPLEXER_DRIVER_HARNESS=cmux` once per shell to drop
 `--harness cmux` from every call; the commands below spell it out.
 Inside a cmux terminal the driver talks to that cmux; from anywhere

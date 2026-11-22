@@ -59,6 +59,17 @@ usually to `multiplexer-driver`'s `Driver` trait (`src/driver.rs`) and
 its command map too. Don't
 edit one side without checking the others.
 
+## Versions
+
+- Each `multiplexer-driver` file names the minimum driver version it
+  needs, in its **Version** paragraph. When a file starts to use a
+  command or a flag from a newer driver release, raise the minimum in
+  that file in the same commit.
+- A release of this skill is a tag `vMAJOR.MINOR.PATCH` on `main`,
+  with a GitHub release. Raise MAJOR when a change breaks a ledger, a
+  roster, or a profile file that exists. Raise MINOR for a new rule
+  or a new driver. Raise PATCH for a correction.
+
 ## Lessons
 
 A run never writes a lesson into this skill. It appends to
