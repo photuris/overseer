@@ -51,6 +51,16 @@ usually to `multiplexer-driver`'s `Driver` trait (`src/driver.rs`) and
 its command map too. Don't
 edit one side without checking the others.
 
+## Lessons
+
+A run never writes a lesson into this skill. It appends to
+`.overseer/LESSONS.md` in the repository it worked on, and promotes a
+repeated friction to the user's local rules file
+(`~/.config/overseer/rules.md`). A rule moves from that file into
+`SKILL.md` only by a commit here, written by hand: remove project
+names, client names, and run ids that mean nothing to a stranger
+first.
+
 ## Conventions
 
 - Frontmatter is `name` + `description` only, third person, starting
